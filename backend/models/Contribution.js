@@ -1,10 +1,25 @@
 import mongoose from 'mongoose';
-const ContributionSchema = new mongoose.Schema({
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    title: { type: String, required: true },
-    description: { type: String, required: true },
-    category: { type: String, enum: ['feature', 'bug', 'idea', 'other'], default: 'idea' },
-    upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
-}, { timestamps: true });
-const Contribution = mongoose.model('Contribution', ContributionSchema);
+
+const commentSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  text: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
+
+const contributionSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  category: { type: String, required: true },
+  upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  comments: [commentSchema],
+  createdAt: { type: Date, default: Date.now },
+
+  
+  fileUrl: { type: String }, 
+  fileType: { type: String }, 
+});
+
+const Contribution = mongoose.model('Contribution', contributionSchema);
+
 export default Contribution;

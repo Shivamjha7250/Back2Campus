@@ -1,7 +1,6 @@
-// File: backend/models/Post.js
 import mongoose from 'mongoose';
 
-// Reply Schema (Comment ke andar nested)
+
 const replySchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     text: { type: String, required: true },
@@ -14,7 +13,7 @@ const commentSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     text: { type: String, required: true },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    replies: [replySchema], // ✅ Replies yahan save honge
+    replies: [replySchema], 
     createdAt: { type: Date, default: Date.now },
 });
 
@@ -28,7 +27,7 @@ const postSchema = new mongoose.Schema(
         }],
         location: { type: String, trim: true },
         likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-        comments: [commentSchema], // ✅ Updated comment schema
+        comments: [commentSchema], //  Updated comment schema
     },
     { timestamps: true }
 );

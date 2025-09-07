@@ -1,76 +1,165 @@
-// File: backend/controllers/contributionController.js
-
 import Contribution from '../models/Contribution.js';
+import path from 'path';
 
-// 1. Create a new contribution
+// 1. Create a new contribution (with file upload support)
 export const createContribution = async (req, res) => {
-    const { userId, title, description, category } = req.body;
-    try {
-        const newContribution = new Contribution({
-            user: userId,
-            title,
-            description,
-            category
-        });
+  const { userId, title, description, category } = req.body;
 
-        // Save the new contribution to the database
-        await newContribution.save();
+  try {
+    let fileUrl = null;
+    let fileType = null;
 
-        // Populate user details before sending the response
-        const contribution = await Contribution.findById(newContribution._id)
-            .populate('user', 'firstName lastName profile.avatar');
+    if (req.file) {
+      fileUrl = `/uploads/${req.file.filename}`; // assuming static serve folder
+      const ext = path.extname(req.file.filename).toLowerCase();
 
-        res.status(201).json(contribution);
-    } catch (error) {
-        console.error("Create Contribution Error:", error);
-        res.status(500).json({ message: 'Server error while creating contribution.' });
+      if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
+        fileType = 'image';
+      } else if (['.mp4', '.mov', '.avi'].includes(ext)) {
+        fileType = 'video';
+      } else if (ext === '.pdf') {
+        fileType = 'pdf';
+      } else {
+        fileType = 'other';
+      }
     }
+
+    const newContribution = new Contribution({
+      user: userId,
+      title,
+      description,
+      category,
+      fileUrl,
+      fileType,
+    });
+
+    await newContribution.save();
+
+    const contribution = await Contribution.findById(newContribution._id)
+      .populate('user', 'firstName lastName profile.avatar');
+
+    res.status(201).json(contribution);
+  } catch (error) {
+    console.error(' Create Contribution Error:', error);
+    res.status(500).json({ message: 'Server error while creating contribution.' });
+  }
 };
 
-// 2. Get all contributions
+// 2. Get all contributions with populated user and commenters info
 export const getContributions = async (req, res) => {
-    try {
-        // Find all contributions and populate the user details
-        const contributions = await Contribution.find()
-            .populate('user', 'firstName lastName profile.avatar')
-            .sort({ upvotes: -1, createdAt: -1 }); // Sort by most upvoted, then newest
+  try {
+    const contributions = await Contribution.find()
+      .populate('user', 'firstName lastName profile.avatar')
+      .populate('comments.user', 'firstName lastName profile.avatar')
+      .sort({ createdAt: -1 });
 
-        res.status(200).json(contributions);
-    } catch (error) {
-        console.error("Fetch Contributions Error:", error);
-        res.status(500).json({ message: 'Server error while fetching contributions.' });
-    }
+    res.status(200).json(contributions);
+  } catch (error) {
+    console.error(' Fetch Contributions Error:', error);
+    res.status(500).json({ message: 'Server error while fetching contributions.' });
+  }
 };
 
-// 3. Upvote or remove an upvote from a contribution
+// 3. Upvote or remove upvote
 export const upvoteContribution = async (req, res) => {
-    const { userId } = req.body; // The user who is upvoting
-    const { id: contributionId } = req.params; // The ID of the contribution being upvoted
+  const { userId } = req.body;
+  const { id: contributionId } = req.params;
 
-    try {
-        const contribution = await Contribution.findById(contributionId);
-
-        if (!contribution) {
-            return res.status(404).json({ message: 'Contribution not found.' });
-        }
-
-        // Check if the user has already upvoted this contribution
-        const upvotedIndex = contribution.upvotes.indexOf(userId);
-
-        if (upvotedIndex > -1) {
-            // User has already upvoted, so remove the upvote
-            contribution.upvotes.splice(upvotedIndex, 1);
-        } else {
-            // User has not upvoted, so add the upvote
-            contribution.upvotes.push(userId);
-        }
-
-        // Save the updated contribution
-        await contribution.save();
-        
-        res.status(200).json(contribution);
-    } catch (error) {
-        console.error("Upvote Error:", error);
-        res.status(500).json({ message: 'Server error while upvoting.' });
+  try {
+    const contribution = await Contribution.findById(contributionId);
+    if (!contribution) {
+      return res.status(404).json({ message: 'Contribution not found.' });
     }
+
+    const index = contribution.upvotes.indexOf(userId);
+    if (index > -1) {
+      contribution.upvotes.splice(index, 1); // remove upvote
+    } else {
+      contribution.upvotes.push(userId); // add upvote
+    }
+
+    await contribution.save();
+
+    const updatedContribution = await Contribution.findById(contributionId)
+      .populate('user', 'firstName lastName profile.avatar')
+      .populate('comments.user', 'firstName lastName profile.avatar');
+
+    res.status(200).json(updatedContribution);
+  } catch (error) {
+    console.error(' Upvote Error:', error);
+    res.status(500).json({ message: 'Server error while upvoting.' });
+  }
+};
+
+// 4. Delete a contribution
+export const deleteContribution = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+
+  try {
+    const contribution = await Contribution.findById(id);
+    if (!contribution) {
+      return res.status(404).json({ message: 'Contribution not found.' });
+    }
+
+    if (contribution.user.toString() !== userId) {
+      return res.status(403).json({ message: 'Unauthorized to delete this contribution.' });
+    }
+
+    await Contribution.findByIdAndDelete(id);
+
+    res.status(200).json({ message: 'Contribution deleted successfully.' });
+  } catch (error) {
+    console.error(' Delete Error:', error);
+    res.status(500).json({ message: 'Server error while deleting contribution.' });
+  }
+};
+
+// 5. Add a comment to a contribution
+export const addCommentToContribution = async (req, res) => {
+  const { id } = req.params;
+  const { userId, text } = req.body;
+
+  try {
+    const contribution = await Contribution.findById(id);
+    if (!contribution) {
+      return res.status(404).json({ message: 'Contribution not found.' });
+    }
+
+    const comment = {
+      user: userId,
+      text,
+      createdAt: new Date(),
+    };
+
+    contribution.comments.push(comment);
+    await contribution.save();
+
+    const updatedContribution = await Contribution.findById(id)
+      .populate('user', 'firstName lastName profile.avatar')
+      .populate('comments.user', 'firstName lastName profile.avatar');
+
+    res.status(200).json(updatedContribution);
+  } catch (error) {
+    console.error(' Comment Error:', error);
+    res.status(500).json({ message: 'Server error while adding comment.' });
+  }
+};
+//  6. Get recent contributions (last 24 hours)
+export const getRecentContributions = async (req, res) => {
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const recentContributions = await Contribution.find({
+      createdAt: { $gte: twentyFourHoursAgo }
+    })
+      .populate('user', 'firstName lastName profile.avatar')
+      .populate('comments.user', 'firstName lastName profile.avatar')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(recentContributions);
+  } catch (error) {
+    console.error(' Fetch Recent Contributions Error:', error);
+    res.status(500).json({ message: 'Server error while fetching recent contributions.' });
+  }
 };

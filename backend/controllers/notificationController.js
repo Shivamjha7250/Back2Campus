@@ -1,4 +1,3 @@
-// File: backend/controllers/notificationController.js
 import Notification from '../models/Notification.js';
 
 // Get all notifications for a user

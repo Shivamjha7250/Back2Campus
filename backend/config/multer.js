@@ -1,21 +1,44 @@
-import multer from 'multer'
-import path   from 'path'
-import fs     from 'fs'
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
-const uploadDir = path.join(process.cwd(), 'uploads', 'chat')
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true })
+const avatarDir = path.join(process.cwd(), 'uploads', 'avatars');
+if (!fs.existsSync(avatarDir)) {
+  fs.mkdirSync(avatarDir, { recursive: true });
 }
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, avatarDir),
+  filename: (req, file, cb) => {
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `avatar-${unique}${path.extname(file.originalname)}`);
+  },
+});
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename:    (req, file, cb) => {
-    const unique = Date.now() + '_' + Math.round(Math.random()*1e9)
-    cb(null, `${file.fieldname}-${unique}${path.extname(file.originalname)}`)
-  }
-})
+const chatDir = path.join(process.cwd(), 'uploads', 'chat');
+if (!fs.existsSync(chatDir)) {
+  fs.mkdirSync(chatDir, { recursive: true });
+}
+const chatStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, chatDir),
+  filename: (req, file, cb) => {
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `chat-${unique}${path.extname(file.originalname)}`);
+  },
+});
 
-export const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
-})
+const postDir = path.join(process.cwd(), 'uploads', 'posts');
+if (!fs.existsSync(postDir)) {
+  fs.mkdirSync(postDir, { recursive: true });
+}
+const postStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, postDir),
+  filename: (req, file, cb) => {
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `post-${unique}${path.extname(file.originalname)}`);
+  },
+});
+
+
+export const uploadAvatar = multer({ storage: avatarStorage });
+export const uploadChatFile = multer({ storage: chatStorage });
+export const uploadPostFiles = multer({ storage: postStorage }); 

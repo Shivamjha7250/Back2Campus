@@ -1,7 +1,6 @@
-// File: backend/routes/notification.js
 import express from 'express';
 import { getNotifications, markAsRead } from '../controllers/notificationController.js';
-import auth from '../middleware/auth.js';
+import auth from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 

@@ -1,35 +1,26 @@
-// File: backend/routes/user.js
 import express from 'express';
 import {
-    uploadProfilePicture,
-    removeProfilePicture,
-    getUserById,
-    getAllUsers
+  updateProfilePhoto,
+  removeProfilePhoto,
+  getUserById,
+  getAllUsers,
+  updateUserProfile,
+  changePassword,
+  updatePrivacySettings
 } from '../controllers/userController.js';
-import auth from '../middleware/auth.js';
-import { upload } from '../config/multer.js';
+import auth from '../middlewares/authMiddleware.js';
+import { uploadAvatar } from '../config/multer.js';
 
 const router = express.Router();
 
-// Route to get all users
 router.get('/', auth, getAllUsers);
-
-// Route to get a single user by ID
 router.get('/:id', auth, getUserById);
 
-// Route to upload/change profile picture
-router.post(
-    '/profile-picture',
-    auth,
-    upload.single('avatar'),
-    uploadProfilePicture
-);
+router.post('/profile-picture', auth, uploadAvatar.single('avatar'), updateProfilePhoto);
+router.delete('/profile-picture', auth, removeProfilePhoto);
 
-// Route to remove profile picture
-router.delete(
-    '/profile-picture',
-    auth,
-    removeProfilePicture
-);
+router.put('/profile', auth, updateUserProfile);
 
+router.put('/change-password', auth, changePassword);
+router.put('/privacy', auth, updatePrivacySettings);
 export default router;

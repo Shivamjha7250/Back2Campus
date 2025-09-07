@@ -1,6 +1,6 @@
-// File: backend/controllers/connectionController.js
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import Conversation from '../models/conversationModel.js'; 
 
 // 1. Send Connection Request
 export const sendRequest = async (req, res) => {
@@ -28,7 +28,7 @@ export const sendRequest = async (req, res) => {
     }
 };
 
-// 2. Respond to a Request (Accept/Reject) - UPDATED FOR REAL-TIME
+// 2. Respond to a Request (Accept/Reject)
 export const respondToRequest = async (req, res) => {
     const receiverId = req.user.id;
     const { requestId, action } = req.body; // requestId is the sender's ID
@@ -41,7 +41,18 @@ export const respondToRequest = async (req, res) => {
             await User.updateOne({ _id: receiverId }, { $addToSet: { connections: requestId } });
             await User.updateOne({ _id: requestId }, { $addToSet: { connections: receiverId } });
 
-            // ✅ Naya logic: Dono users ko naye connection ki jaankari bhejein
+            
+            const existingConversation = await Conversation.findOne({
+                members: { $all: [receiverId, requestId] }
+            });
+
+            if (!existingConversation) {
+                const newConversation = new Conversation({
+                    members: [receiverId, requestId],
+                });
+                await newConversation.save();
+            }
+
             const newConnectionForReceiver = await User.findById(requestId).select('firstName lastName userType profile.avatar');
             const newConnectionForSender = await User.findById(receiverId).select('firstName lastName userType profile.avatar');
             
@@ -61,6 +72,7 @@ export const respondToRequest = async (req, res) => {
 
         res.status(200).json({ message: `Request ${action}ed successfully.` });
     } catch (error) {
+        console.error("Error in respondToRequest:", error);
         res.status(500).json({ message: 'Server error while responding to request.' });
     }
 };
@@ -101,7 +113,6 @@ export const removeConnection = async (req, res) => {
         await User.updateOne({ _id: userId }, { $pull: { connections: connectionId } });
         await User.updateOne({ _id: connectionId }, { $pull: { connections: userId } });
 
-        // ✅ Naya logic: Dono users ko batayein ki connection remove ho gaya hai
         req.io.emit(`connection_removed_${userId}`, { connectionId });
         req.io.emit(`connection_removed_${connectionId}`, { connectionId: userId });
 

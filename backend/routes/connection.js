@@ -1,4 +1,3 @@
-// File: backend/routes/connection.js
 import express from 'express';
 import { 
     sendRequest, 
@@ -7,7 +6,7 @@ import {
     getMyConnections,
     removeConnection
 } from '../controllers/connectionController.js';
-import auth from '../middleware/auth.js';
+import auth from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -21,7 +20,7 @@ router.put('/respond', auth, respondToRequest);
 router.get('/received', auth, getReceivedRequests);
 
 // GET /api/connections/my
-router.get('/my', auth, getMyConnections); // ✅ Yeh route ab kaam karega
+router.get('/my', auth, getMyConnections); 
 
 // DELETE /api/connections/remove/:connectionId
 router.delete('/remove/:connectionId', auth, removeConnection);

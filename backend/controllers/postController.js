@@ -1,6 +1,6 @@
 import Post from '../models/Post.js';
 import User from '../models/User.js';
-import Notification from '../models/Notification.js'; // ✅ ADD THIS LINE
+import Notification from '../models/Notification.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -66,7 +66,11 @@ export const getAllPosts = async (req, res) => {
 // 3. Get posts for a specific user
 export const getMyPosts = async (req, res) => {
     try {
-        const posts = await Post.find({ user: req.params.userId }).sort({ createdAt: -1 });
+        
+        const posts = await Post.find({ user: req.params.userId })
+            .populate('user', 'firstName lastName profile.avatar') 
+            .sort({ createdAt: -1 });
+
         res.status(200).json(posts);
     } catch (error) {
         res.status(500).json({ message: 'Server error.' });
@@ -133,7 +137,7 @@ export const toggleLike = async (req, res) => {
 
         await post.save();
 
-        // ✅ Notification logic for like
+        //  Notification logic for like
         if (!isLiked && post.user.toString() !== userId) {
             const notification = new Notification({
                 recipient: post.user,
@@ -161,7 +165,7 @@ export const addComment = async (req, res) => {
 
         await post.save();
 
-        // ✅ Notification logic for comment
+        //  Notification logic for comment
         if (post.user.toString() !== req.user.id) {
             const notification = new Notification({
                 recipient: post.user,

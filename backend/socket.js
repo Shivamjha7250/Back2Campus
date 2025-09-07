@@ -1,51 +1,88 @@
-let onlineUsers = []
+import Chat from '../backend/models/chatModel.js';
+import Conversation from '../backend/models/conversationModel.js';
+import User from '../backend/models/User.js';
 
-const addUser = (userId, socketId) => {
-  if (!onlineUsers.some(u => u.userId === userId)) {
-    onlineUsers.push({ userId, socketId })
-  }
-}
-
-const removeUser = socketId => {
-  onlineUsers = onlineUsers.filter(u => u.socketId !== socketId)
-}
-
-const getUser = userId => onlineUsers.find(u => u.userId === userId)
+const onlineUsers = new Map();
 
 export default function initSocket(io) {
-  io.on('connection', socket => {
-    console.log('🟢 Socket connected:', socket.id)
+  io.use((socket, next) => {
+    const userId = socket.handshake.auth.userId;
+    if (!userId) return next(new Error("Invalid userId"));
+    socket.userId = userId;
+    next();
+  });
 
-    socket.on('addUser', userId => {
-      addUser(userId, socket.id)
-      io.emit('getUsers', onlineUsers)
-    })
+  io.on('connection', async (socket) => {
+    console.log(' Connected:', socket.userId);
+    onlineUsers.set(socket.userId, socket.id);
 
-    socket.on('sendMessage', data => {
-      const receiver = getUser(data.receiverId)
-      if (receiver) io.to(receiver.socketId).emit('getMessage', data)
-    })
+    await User.findByIdAndUpdate(socket.userId, { isOnline: true });
 
-    socket.on('seenMessages', ({ conversationId, receiverId }) => {
-      const receiver = getUser(receiverId)
-      if (receiver) io.to(receiver.socketId).emit('messagesSeen', { conversationId })
-    })
+    
+    io.emit('onlineUsers', Array.from(onlineUsers.keys()));
 
-    socket.on('deleteMessage', ({ conversationId, messageId }) => {
-      onlineUsers.forEach(u =>
-        io.to(u.socketId).emit('messageDeleted', { conversationId, messageId })
-      )
-    })
+    
+    socket.on('joinConversations', (conversationIds) => {
+      conversationIds.forEach(id => socket.join(id));
+    });
 
-    socket.on('clearChat', ({ conversationId }) => {
-      onlineUsers.forEach(u =>
-        io.to(u.socketId).emit('chatCleared', { conversationId })
-      )
-    })
+    //  Chat 
+    socket.on('sendMessage', async (data) => {
+      const { conversationId, sender, text, fileUrl, messageType, replyTo } = data;
+      const newMsg = new Chat({ conversationId, sender, text, fileUrl, messageType, replyTo });
+      const saved = await newMsg.save();
 
-    socket.on('disconnect', () => {
-      removeUser(socket.id)
-      io.emit('getUsers', onlineUsers)
-    })
-  })
+      await Conversation.findByIdAndUpdate(conversationId, {
+        lastMessage: text || messageType,
+        lastMessageTimestamp: Date.now()
+      });
+
+      
+      io.to(conversationId).emit('newMessage', saved);
+
+      
+      const conversation = await Conversation.findById(conversationId);
+      const recipients = conversation.participants.filter(id => id.toString() !== sender);
+
+      recipients.forEach(userId => {
+        const socketId = onlineUsers.get(userId.toString());
+        if (socketId) {
+          io.to(socketId).emit('new_chat');
+        }
+      });
+    });
+
+    //  Typing indicator (optional)
+    socket.on('typing', ({ conversationId, userId }) => {
+      socket.to(conversationId).emit('typing', { conversationId, userId });
+    });
+
+  
+    socket.on('send_request', (targetUserId) => {
+      const targetSocketId = onlineUsers.get(targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('new_request');
+      }
+    });
+
+    
+    socket.on('send_notification', (targetUserId) => {
+      const targetSocketId = onlineUsers.get(targetUserId);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('new_notification');
+      }
+    });
+
+    //  Disconnect
+    socket.on('disconnect', async () => {
+      console.log(' Disconnected:', socket.userId);
+      onlineUsers.delete(socket.userId);
+      await User.findByIdAndUpdate(socket.userId, {
+        isOnline: false,
+        lastSeen: new Date(),
+      });
+
+      io.emit('onlineUsers', Array.from(onlineUsers.keys()));
+    });
+  });
 }

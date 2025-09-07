@@ -1,114 +1,198 @@
-// backend/controllers/chatController.js
+import Chat from '../models/chatModel.js';
+import Conversation from '../models/conversationModel.js';
+import path from 'path';
 
-import Conversation from '../models/Conversation.js'
-import Message      from '../models/Message.js'
+// Helper function to determine message type from file
+const getMessageTypeFromFile = (file) => {
+    if (!file || !file.originalname) return 'doc';
+    const extension = path.extname(file.originalname).toLowerCase();
+    if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(extension)) return 'image';
+    if (['.mp4', '.webm', '.mov', '.avi'].includes(extension)) return 'video';
+    if (extension === '.pdf') return 'pdf';
+    return 'doc';
+};
 
-/**
- * Create & send a new message
- */
-export const createMessage = async (req, res) => {
-  const { conversationId, receiverId, text } = req.body
-  try {
-    const files = (req.files || []).map(f => ({
-      url:      `/uploads/chat/${f.filename}`,
-      fileName: f.originalname,
-      fileType: f.mimetype
-    }))
+// Find or create a conversation
+export const initiateConversation = async (req, res) => {
+    const senderId = req.user._id;
+    const { receiverId } = req.body;
 
-    const msg = new Message({
-      conversationId,
-      sender:   req.user.id,
-      receiver: receiverId,
-      text,
-      files,
-      status:   'sent'
-    })
-    await msg.save()
+    try {
+        let conversation = await Conversation.findOne({
+            members: { $all: [senderId, receiverId] },
+        }).populate('members', 'firstName lastName profile');
 
-    await Conversation.findByIdAndUpdate(conversationId, {
-      lastMessage: text || 'File',
-      $inc:        { unreadCount: 1 }
-    })
+        if (!conversation) {
+            conversation = new Conversation({
+                members: [senderId, receiverId],
+            });
+            await conversation.save();
+            // Re-populate after saving to get all member details
+            conversation = await Conversation.findById(conversation._id).populate('members', 'firstName lastName profile');
+        }
 
-    return res.status(201).json(msg)
-  } catch (err) {
-    console.error('❌ createMessage Error:', err)
-    return res.status(500).json({ message: 'Server error sending message.' })
-  }
-}
+        res.status(200).json(conversation);
+    } catch (err) {
+        console.error('Initiate Conversation Error:', err);
+        res.status(500).json({ message: 'Failed to initiate conversation' });
+    }
+};
 
-/**
- * Get messages for a conversation
- */
+// Get all conversations for the logged-in user
+export const getConversations = async (req, res) => {
+    try {
+        const conversations = await Conversation.find({ members: req.user._id })
+            .populate('members', 'firstName lastName profile')
+            .populate({
+                path: 'lastMessage',
+                model: 'Chat',
+                populate: { path: 'sender', select: 'firstName' }
+            })
+            .sort({ lastMessageTimestamp: -1 }); 
+        res.status(200).json(conversations);
+    } catch (err) {
+        console.error('Get Conversations Error:', err);
+        res.status(500).json({ message: 'Failed to fetch conversations' });
+    }
+};
+
+// Get messages for a specific conversation
 export const getMessages = async (req, res) => {
-  try {
-    const msgs = await Message.find({ conversationId: req.params.conversationId })
-                              .sort('createdAt')
-    return res.status(200).json(msgs)
-  } catch (err) {
-    console.error('❌ getMessages Error:', err)
-    return res.status(500).json({ message: 'Error fetching messages.' })
-  }
-}
+    try {
+        const messages = await Chat.find({
+            conversationId: req.params.conversationId,
+            deletedBy: { $ne: req.user._id }
+        }).populate('sender', 'firstName lastName profile');
+        res.status(200).json(messages);
+    } catch (err) {
+        console.error('Get Messages Error:', err);
+        res.status(500).json({ message: 'Failed to fetch messages' });
+    }
+};
 
-/**
- * Mark messages as seen
- */
-export const markMessagesAsSeen = async (req, res) => {
-  try {
-    await Message.updateMany(
-      { conversationId: req.body.conversationId, receiver: req.user.id },
-      { status: 'seen' }
-    )
-    return res.status(200).json({ message: 'Messages marked as seen.' })
-  } catch (err) {
-    console.error('❌ markMessagesAsSeen Error:', err)
-    return res.status(500).json({ message: 'Error updating seen.' })
-  }
-}
+// Send a regular text message
+export const sendMessage = async (req, res) => {
+    try {
+        const { conversationId, text, replyTo } = req.body;
+        const newMsg = new Chat({ conversationId, sender: req.user._id, text, messageType: 'text', replyTo });
+        const savedMsg = await newMsg.save();
+        
+        await Conversation.findByIdAndUpdate(conversationId, { 
+            lastMessage: savedMsg._id,
+            lastMessageTimestamp: savedMsg.createdAt 
+        });
 
-/**
- * Delete a single message
- */
-export const deleteMessage = async (req, res) => {
-  try {
-    await Message.findByIdAndDelete(req.params.messageId)
-    return res.status(200).json({ message: 'Message deleted.' })
-  } catch (err) {
-    console.error('❌ deleteMessage Error:', err)
-    return res.status(500).json({ message: 'Error deleting message.' })
-  }
-}
+        const populatedMsg = await Chat.findById(savedMsg._id).populate('sender', 'firstName lastName profile');
+        req.io.to(conversationId.toString()).emit('newMessage', populatedMsg);
+        res.status(201).json(populatedMsg);
+    } catch (err) {
+        console.error('Send Message Error:', err);
+        res.status(500).json({ message: 'Message sending failed' });
+    }
+};
 
-/**
- * Clear all messages in a conversation
- */
-export const clearConversation = async (req, res) => {
-  try {
-    await Message.deleteMany({ conversationId: req.params.conversationId })
-    await Conversation.findByIdAndUpdate(req.params.conversationId, {
-      unreadCount: 0
-    })
-    return res.status(200).json({ message: 'Conversation cleared.' })
-  } catch (err) {
-    console.error('❌ clearConversation Error:', err)
-    return res.status(500).json({ message: 'Error clearing conversation.' })
-  }
-}
+// Send a file message
+export const sendFileMessage = async (req, res) => {
+    try {
+        const { conversationId } = req.body;
+        if (!req.file) return res.status(400).json({ message: 'No file uploaded.' });
+        const messageType = getMessageTypeFromFile(req.file);
+        const newMessage = new Chat({
+            conversationId,
+            sender: req.user._id,
+            messageType,
+            fileUrl: `/uploads/chat/${req.file.filename}`,
+            text: req.file.originalname,
+        });
+        const savedMessage = await newMessage.save();
 
-/**
- * Get all conversations for the current user
- */
-export const getUserConversations = async (req, res) => {
-  try {
-    const convos = await Conversation
-      .find({ participants: req.user.id })
-      .populate('participants', '-password')
-      .sort('-updatedAt')
+        await Conversation.findByIdAndUpdate(conversationId, { 
+            lastMessage: savedMessage._id,
+            lastMessageTimestamp: savedMessage.createdAt
+        });
 
-    return res.status(200).json(convos)
-  } catch (err) {
-    console.error('❌ getUserConversations Error:', err)
-    return res.status(500).json({ message: 'Error fetching conversations.' })
-  }
-}
+        const populatedMessage = await Chat.findById(savedMessage._id).populate('sender', 'firstName lastName profile');
+        req.io.to(conversationId.toString()).emit('newMessage', populatedMessage);
+        res.status(201).json(populatedMessage);
+    } catch (err) {
+        console.error('Send File Message Error:', err);
+        res.status(500).json({ message: 'Failed to send file message' });
+    }
+};
+
+// Edit a message
+export const editMessage = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { newText } = req.body;
+        const msg = await Chat.findById(messageId);
+
+        if (!msg) return res.status(404).json({ message: 'Message not found' });
+        if (msg.sender.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Not authorized.' });
+
+        const fiveMinutes = 5 * 60 * 1000;
+        if (new Date() - new Date(msg.createdAt) > fiveMinutes) {
+            return res.status(403).json({ message: 'Cannot edit messages older than 5 minutes.' });
+        }
+
+        msg.text = newText;
+        msg.isEdited = true;
+        await msg.save();
+
+        const populatedMsg = await Chat.findById(msg._id).populate('sender', 'firstName lastName profile');
+        req.io.to(msg.conversationId.toString()).emit('messageUpdated', populatedMsg);
+        res.status(200).json(populatedMsg);
+    } catch (err) {
+        console.error('Edit Message Error:', err);
+        res.status(500).json({ message: 'Failed to edit message' });
+    }
+};
+
+// Delete message for the current user only
+export const deleteMessageForMe = async (req, res) => {
+    try {
+        await Chat.findByIdAndUpdate(req.params.messageId, {
+            $addToSet: { deletedBy: req.user._id }
+        });
+        res.status(200).json({ message: 'Message deleted for you' });
+    } catch (err) {
+        console.error('Delete For Me Error:', err);
+        res.status(500).json({ message: 'Failed to delete message' });
+    }
+};
+
+// Delete message for everyone in the chat
+export const deleteMessageForEveryone = async (req, res) => {
+    try {
+        const msg = await Chat.findById(req.params.messageId);
+        if (!msg) return res.status(404).json({ message: 'Message not found' });
+        if (msg.sender.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Not authorized.' });
+        
+        await msg.deleteOne();
+        
+        req.io.to(msg.conversationId.toString()).emit('messageDeleted', {
+            messageId: req.params.messageId,
+            conversationId: msg.conversationId.toString()
+        });
+        
+        res.status(200).json({ message: 'Message deleted for everyone' });
+    } catch (err) {
+        console.error('Delete For Everyone Error:', err);
+        res.status(500).json({ message: 'Failed to delete message' });
+    }
+};
+
+export const clearChat = async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        // This only hides messages for the user, doesn't delete them
+        await Chat.updateMany(
+            { conversationId: conversationId },
+            { $addToSet: { deletedBy: req.user._id } }
+        );
+        res.status(200).json({ message: 'Chat cleared for you' });
+    } catch (err) {
+        console.error('Clear Chat Error:', err);
+        res.status(500).json({ message: 'Failed to clear chat' });
+    }
+};
