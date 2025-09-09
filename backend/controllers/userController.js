@@ -3,19 +3,16 @@ import path from 'path';
 import fs from 'fs';
 import bcrypt from 'bcryptjs';
 
-//  Upload / Change Profile Photo
 export const updateProfilePhoto = async (req, res) => {
 try {
  const user = await User.findById(req.user.id);
  if (!user) return res.status(404).json({ message: 'User not found' });
 
- // Delete old photo if exists
  if (user.profile?.avatar) {
  const oldPath = path.join(process.cwd(), user.profile.avatar);
  if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
  }
 
- // Save new avatar
  user.profile = {
  ...user.profile,
  avatar: `/uploads/avatars/${req.file.filename}`,
@@ -29,7 +26,6 @@ try {
 }
 };
 
-//  Remove Profile Photo
 export const removeProfilePhoto = async (req, res) => {
 try {
  const user = await User.findById(req.user.id);
@@ -49,7 +45,6 @@ try {
 }
 };
 
-//  Get All Users (Excluding Password)
 export const getAllUsers = async (req, res) => {
 try {
  const users = await User.find().select('-password');
@@ -60,7 +55,6 @@ try {
 }
 };
 
-//  Get User by ID
 export const getUserById = async (req, res) => {
 try {
  const user = await User.findById(req.params.id).select('-password');
@@ -72,7 +66,6 @@ try {
 }
 };
 
-//  Update User Profile
 export const updateUserProfile = async (req, res) => {
 try {
  const userId = req.user.id;
@@ -105,7 +98,6 @@ try {
 }
 };
 
-//  Change Password Function (FIXED)
 export const changePassword = async (req, res) => {
 try {
  const userId = req.user.id;
@@ -120,20 +112,16 @@ try {
     return res.status(404).json({ message: 'User not found' });
   }
   
-  //  NEW: Safety check add kiya gaya hai
   if (!user.password) {
       return res.status(400).json({ message: 'User does not have a password set up. Cannot change password.' });
   }
 
-
- // Check old password
  const isMatch = await bcrypt.compare(currentPassword, user.password);
  
  if (!isMatch) {
  return res.status(400).json({ message: 'Old password is incorrect' });
  }
 
- // Hash and save the new password
  user.password = newPassword; 
 
  await user.save();
@@ -146,7 +134,6 @@ try {
 };
 
 
-//  Update User Privacy Settings
 export const updatePrivacySettings = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -157,10 +144,9 @@ export const updatePrivacySettings = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Initialize user.privacy if it doesn't exist
     user.privacy = user.privacy || {};
 
-    // Update privacy fields
+  
     if (profileVisibility !== undefined) user.privacy.profileVisibility = profileVisibility;
     if (connectionRequests !== undefined) user.privacy.connectionRequests = connectionRequests;
 

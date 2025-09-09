@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-// Pages
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import OtpVerificationPage from './pages/OtpVerification';
@@ -19,7 +18,7 @@ import ChatPage from './pages/Chat';
 import ContributePage from './pages/Contribute';
 import SettingsPage from './pages/Settings';
 import UserProfilePage from './pages/UserProfilePage';
-
+import SinglePostPage from './pages/SinglePostPage'; 
 
 import { socket } from './socket';
 
@@ -90,14 +89,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
+        
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/otp-verification" element={<OtpVerificationPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        {/* Protected Routes */}
+        
         <Route
           path="/"
           element={
@@ -117,6 +116,7 @@ function App() {
           <Route path="contribute" element={<ContributePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="profile/:userId" element={<UserProfilePage />} />
+          <Route path="/post/:postId" element={<SinglePostPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

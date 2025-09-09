@@ -4,7 +4,6 @@ import sendEmail from '../utils/sendEmail.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
-// ✅ Helpers
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
@@ -13,7 +12,7 @@ const generateOtp = () => crypto.randomInt(100000, 999999).toString();
 const formatUserType = (type) =>
   type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
 
-//  1. Register User (Send OTP)
+
 export const register = async (req, res) => {
   const { firstName, lastName, email, password, userType } = req.body;
 
@@ -42,7 +41,6 @@ export const register = async (req, res) => {
   }
 };
 
-//  2. Verify OTP (For Register / Login / Forgot Password)
 export const verifyOtp = async (req, res) => {
   const { userId, otp } = req.body;
 
@@ -62,12 +60,12 @@ export const verifyOtp = async (req, res) => {
       message: 'OTP verified successfully',
       token,
       user: {
-        _id: user._id, //The main fix is here
+        _id: user._id, 
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         userType: user.userType,
-        profile: user.profile, // Also sending the profile
+        profile: user.profile, 
       },
     });
   } catch (error) {
@@ -76,7 +74,6 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
-//  3. Resend OTP
 export const resendOtp = async (req, res) => {
   const { userId } = req.body;
 
@@ -95,7 +92,6 @@ export const resendOtp = async (req, res) => {
   }
 };
 
-//  4. Login (Send OTP Every Time)
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -123,7 +119,7 @@ export const login = async (req, res) => {
   }
 };
 
-//  5. Forgot Password – Send OTP
+
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
@@ -142,7 +138,7 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-//  6. Reset Password – After OTP is Already Verified
+
 export const resetPassword = async (req, res) => {
   const { userId, newPassword } = req.body;
   try {

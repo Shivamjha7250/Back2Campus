@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
-import { MoreHorizontal, Edit, Trash2, Heart, MessageCircle, Share2, MapPin, Send } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  MoreHorizontal,
+  Send,
+  Trash2,
+  MapPin,
+  Edit
+} from 'lucide-react';
 import axios from 'axios';
+import { Link, useNavigate } from 'react-router-dom';
+import LikersModal from './LikersModal';
 import API_BASE_URL from '../pages/apiConfig';
-import { Link } from 'react-router-dom';
 
 const isEditable = (createdAt) => {
   const now = new Date();
   const postTime = new Date(createdAt);
-  const diffInHours = (now - postTime) / (1000 * 60 * 60);
-  return diffInHours < 2; 
+  return (now - postTime) / (1000 * 60 * 60) < 2;
 };
 
-const Comment = ({ comment, currentUser, postOwnerId, onReplySubmit, onDeleteComment }) => {
+const Comment = ({ comment, currentUser, postOwnerId, onReplySubmit, onDeleteComment, isReadOnly }) => {
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState('');
 
@@ -23,8 +32,7 @@ const Comment = ({ comment, currentUser, postOwnerId, onReplySubmit, onDeleteCom
     setShowReply(false);
   };
 
-  // Determine if current user can delete this comment
-  const canDeleteComment = currentUser?._id === postOwnerId || currentUser?._id === comment.user?._id;
+  const canDelete = currentUser?._id === postOwnerId || currentUser?._id === comment.user?._id;
 
   return (
     <div className="p-2 border rounded bg-gray-50 relative">
@@ -34,45 +42,42 @@ const Comment = ({ comment, currentUser, postOwnerId, onReplySubmit, onDeleteCom
           alt={`${comment.user?.firstName} ${comment.user?.lastName}`}
           className="w-8 h-8 rounded-full object-cover cursor-pointer"
         />
-        <p className="font-semibold cursor-pointer hover:underline">{comment.user?.firstName} {comment.user?.lastName}</p>
+        <p className="font-semibold cursor-pointer hover:underline">
+          {comment.user?.firstName} {comment.user?.lastName}
+        </p>
       </Link>
-
-      <p>{comment.text}</p>
-
-      <button
-        onClick={() => setShowReply(!showReply)}
-        className="text-sm text-blue-500 mt-1 hover:underline"
-      >
-        Reply
-      </button>
-
-      {canDeleteComment && (
+      <p className="pl-10">{comment.text}</p>
+      {!isReadOnly && (
+        <button onClick={() => setShowReply(!showReply)} className="text-sm text-blue-500 mt-1 pl-10 hover:underline">
+          Reply
+        </button>
+      )}
+      {!isReadOnly && canDelete && (
         <button
           onClick={() => onDeleteComment(comment._id)}
           className="absolute top-2 right-2 text-red-600 hover:text-red-800"
-          title="Delete Comment"
         >
-          <Trash2 size={16} />
+          <Trash2 size={14} />
         </button>
       )}
-
-      {showReply && (
-        <form onSubmit={handleReply} className="mt-2 flex items-center gap-2">
+      {showReply && !isReadOnly && (
+        <form onSubmit={handleReply} className="mt-2 flex items-center gap-2 pl-10">
           <input
             type="text"
             placeholder="Write a reply..."
             value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
+            onChange={e => setReplyText(e.target.value)}
             className="flex-1 bg-white border rounded-full px-3 py-1 text-sm"
           />
-          <button type="submit" className="text-blue-500"><Send size={18} /></button>
+          <button type="submit" className="text-blue-500">
+            <Send size={16} />
+          </button>
         </form>
       )}
-
       {comment.replies?.length > 0 && (
         <div className="ml-4 mt-2 space-y-2">
-          {comment.replies.map((reply) => {
-            const canDeleteReply = currentUser?._id === postOwnerId || currentUser?._id === reply.user?._id;
+          {comment.replies.map(reply => {
+            const canDelReply = currentUser?._id === postOwnerId || currentUser?._id === reply.user?._id;
             return (
               <div key={reply._id} className="text-sm bg-gray-100 p-2 rounded flex items-center gap-2 relative">
                 <Link to={`/profile/${reply.user?._id}`} className="flex items-center gap-2">
@@ -84,14 +89,12 @@ const Comment = ({ comment, currentUser, postOwnerId, onReplySubmit, onDeleteCom
                   <p className="font-semibold cursor-pointer hover:underline">{reply.user?.firstName} {reply.user?.lastName}</p>
                 </Link>
                 <p>{reply.text}</p>
-
-                {canDeleteReply && (
+                {canDelReply && !isReadOnly && (
                   <button
-                    onClick={() => onDeleteComment(reply._id, comment._id)} 
+                    onClick={() => onDeleteComment(reply._id, comment._id)}
                     className="absolute top-2 right-2 text-red-600 hover:text-red-800"
-                    title="Delete Reply"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={12} />
                   </button>
                 )}
               </div>
@@ -103,134 +106,111 @@ const Comment = ({ comment, currentUser, postOwnerId, onReplySubmit, onDeleteCom
   );
 };
 
-const PostCard = ({ post, currentUser, onPostDelete, onUpdatePost }) => {
+
+const PostCard = ({ post, currentUser, onUpdatePost, onPostDelete, isReadOnly = false }) => {
+  const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
-
-  const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content);
+  const [isEditing, setIsEditing] = useState(false);
+  const [likers, setLikers] = useState([]);
+  const [showLikersModal, setShowLikersModal] = useState(false);
+  const [showShareBox, setShowShareBox] = useState(false);
 
   const isOwner = currentUser?._id === post.user?._id;
-  const isLiked = post.likes.includes(currentUser?._id);
+
   
-  const formatDate = (dateString) =>
-    new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric',
-    });
+  const isLiked = currentUser && post.likes
+    ? post.likes.some(like => like.user?._id === currentUser._id)
+    : false;
+
+  const formatDate = dateString => new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  const handleInteraction = () => {
+    if (isReadOnly || !currentUser) {
+      if (window.confirm('Please log in to interact?')) navigate('/login');
+      return false;
+    }
+    return true;
+  };
 
   const handleLike = async () => {
+    if (!handleInteraction() || !onUpdatePost) return;
     try {
       const token = localStorage.getItem('token');
-      const { data } = await axios.put(
-        `${API_BASE_URL}/api/posts/${post._id}/like`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const { data } = await axios.put(`${API_BASE_URL}/api/posts/${post._id}/like`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       onUpdatePost(data);
-    } catch (error) {
-      console.error("Failed to like post:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const handleAddComment = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
+  const handleLikesClick = useCallback(async () => {
+    if (!post.likes.length) return;
     try {
       const token = localStorage.getItem('token');
-      const { data } = await axios.post(
-        `${API_BASE_URL}/api/posts/${post._id}/comment`,
-        { text: newComment },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const { data } = await axios.get(`${API_BASE_URL}/api/posts/${post._id}/likers`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setLikers(data);
+      setShowLikersModal(true);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [post._id, post.likes.length]);
+
+  const handleCommentSubmit = async e => {
+    e.preventDefault();
+    if (!newComment.trim() || !handleInteraction() || !onUpdatePost) return;
+    try {
+      const token = localStorage.getItem('token');
+      const { data } = await axios.post(`${API_BASE_URL}/api/posts/${post._id}/comment`, { text: newComment }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       onUpdatePost(data);
       setNewComment('');
       setShowComments(true);
-    } catch (error) {
-      console.error("Failed to add comment:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const handleReplySubmit = async (commentId, replyText) => {
+    if (!handleInteraction() || !onUpdatePost) return;
     try {
       const token = localStorage.getItem('token');
-      const { data } = await axios.post(
-        `${API_BASE_URL}/api/posts/${post._id}/comments/${commentId}/reply`,
-        { text: replyText },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const { data } = await axios.post(`${API_BASE_URL}/api/posts/${post._id}/comments/${commentId}/reply`, { text: replyText }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       onUpdatePost(data);
-    } catch (error) {
-      console.error("Failed to reply to comment:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  // For replies, commentId (parent) will be passed as well.
-  const handleDeleteComment = async (commentOrReplyId, parentCommentId = null) => {
-    const confirmMsg = parentCommentId
-      ? "Are you sure you want to delete this reply?"
-      : "Are you sure you want to delete this comment?";
-
-    if (!window.confirm(confirmMsg)) return;
-
+  const handleDeleteComment = async (cid, parentId = null) => {
+    if (!handleInteraction() || !onUpdatePost) return;
+    if (!window.confirm(parentId ? 'Delete reply?' : 'Delete comment?')) return;
     try {
       const token = localStorage.getItem('token');
-      let url = '';
-      if (parentCommentId) {
-        // Delete reply
-        url = `${API_BASE_URL}/api/posts/${post._id}/comments/${parentCommentId}/reply/${commentOrReplyId}`;
-      } else {
-        // Delete comment
-        url = `${API_BASE_URL}/api/posts/${post._id}/comments/${commentOrReplyId}`;
-      }
-
-      const { data } = await axios.delete(
-        url,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const url = parentId
+        ? `${API_BASE_URL}/api/posts/${post._id}/comments/${parentId}/reply/${cid}`
+        : `${API_BASE_URL}/api/posts/${post._id}/comments/${cid}`;
+      const { data } = await axios.delete(url, { headers: { Authorization: `Bearer ${token}` } });
       onUpdatePost(data);
-    } catch (error) {
-      console.error("Failed to delete comment/reply:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this post?")) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(
-          `${API_BASE_URL}/api/posts/${post._id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (onPostDelete) onPostDelete(post._id);
-      } catch (error) {
-        console.error("Failed to delete post:", error);
-      }
-    }
-  };
-
-  const handleShare = async () => {
-    const shareData = {
-      title: `Post by ${post.user.firstName}`,
-      text: post.content,
-      url: window.location.href,
-    };
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(shareData.url);
-        alert('Link copied to clipboard!');
-      }
-    } catch (error) {
-      console.error('Error sharing:', error);
-    }
-  };
-
-  // Updated handleEditClick with 2 hour restriction
   const handleEditClick = () => {
     if (!isEditable(post.createdAt)) {
-      alert("Sorry! You can only edit the post within 2 hours of posting.");
+      alert('Editing allowed only within 2 hours.');
       setShowMenu(false);
       return;
     }
@@ -240,18 +220,16 @@ const PostCard = ({ post, currentUser, onPostDelete, onUpdatePost }) => {
   };
 
   const handleEditSave = async () => {
+    if (!onUpdatePost) return;
     try {
       const token = localStorage.getItem('token');
-      const { data } = await axios.put(
-        `${API_BASE_URL}/api/posts/${post._id}`,
-        { content: editedContent },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const { data } = await axios.put(`${API_BASE_URL}/api/posts/${post._id}`, { content: editedContent }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       onUpdatePost(data);
       setIsEditing(false);
-    } catch (error) {
-      console.error("Failed to update post:", error);
-      alert("Failed to update post");
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -260,48 +238,64 @@ const PostCard = ({ post, currentUser, onPostDelete, onUpdatePost }) => {
     setEditedContent(post.content);
   };
 
+  const handleShare = () => {
+    setShowShareBox(!showShareBox);
+  };
+
+  const copyToClipboard = async text => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert('Copied!');
+    } catch (err) {
+      console.error(err);
+      alert('Copy failed');
+    }
+  };
+
+  const publicUrl = `${window.location.origin}/public/post/${post._id}`;
+
   return (
-    <div className={`p-4 rounded-xl shadow-sm border mb-6 transition-all duration-300 ${isEditable(post.createdAt) ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 bg-white'}`}>
-      {/* Header */}
-      <div className="flex justify-between items-start">
+    <div className={`p-4 mb-6 rounded-xl shadow-sm border ${isEditable(post.createdAt) ? 'bg-yellow-50 border-yellow-400' : 'bg-white border-gray-200'}`}>
+      <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-3">
           <Link to={`/profile/${post.user?._id}`}>
             <img
               src={post.user?.profile?.avatar ? `${API_BASE_URL}${post.user.profile.avatar}` : 'https://placehold.co/48x48'}
-              alt="author"
-              className="w-12 h-12 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-blue-500"
+              alt="avatar"
+              className="w-12 h-12 rounded-full object-cover"
             />
           </Link>
           <div>
             <Link to={`/profile/${post.user?._id}`}>
-              <p className="font-bold hover:text-blue-600 hover:underline flex items-center gap-2">
-                {post.user?.firstName} {post.user?.lastName}
-                {isEditable(post.createdAt) && (
-                  <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded">✨ New</span>
-                )}
-              </p>
+              <p className="font-bold">{post.user?.firstName} {post.user?.lastName}</p>
             </Link>
             <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
           </div>
         </div>
-
-        {isOwner && (
+        {isOwner && !isReadOnly && (
           <div className="relative">
             <button onClick={() => setShowMenu(!showMenu)} className="p-2 rounded-full hover:bg-gray-100">
               <MoreHorizontal size={20} />
             </button>
             {showMenu && (
-              <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border z-10">
-                <button
-                  onClick={handleEditClick}
-                  className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
+              <div className="absolute right-0 mt-2 w-40 bg-white border rounded-md shadow-lg z-10">
+                <button onClick={handleEditClick} className="w-full text-left px-4 py-2 flex items-center gap-2 hover:bg-gray-100">
                   <Edit size={16} /> Edit
                 </button>
-                <button
-                  onClick={handleDelete}
-                  className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                >
+                
+                <button onClick={() => {
+                  if (window.confirm('Delete this post?')) {
+                    axios.delete(`${API_BASE_URL}/api/posts/${post._id}`, {
+                      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                    }).then(() => {
+                      if (onPostDelete) {
+                        onPostDelete(post._id); 
+                      } else if (onUpdatePost) {
+                        onUpdatePost(null); 
+                      }
+                    });
+                  }
+                }} className="w-full text-left px-4 py-2 flex items-center gap-2 text-red-600 hover:bg-gray-100">
                   <Trash2 size={16} /> Delete
                 </button>
               </div>
@@ -310,93 +304,103 @@ const PostCard = ({ post, currentUser, onPostDelete, onUpdatePost }) => {
         )}
       </div>
 
-      {/* Content */}
-      <div className="my-4 space-y-4">
-        {!isEditing ? (
-          <p>{post.content}</p>
-        ) : (
-          <div className="space-y-2">
+      <div className="mb-4">
+        {!isEditing ? <p>{post.content}</p> : (
+          <div>
             <textarea
               value={editedContent}
-              onChange={(e) => setEditedContent(e.target.value)}
-              className="w-full border rounded p-2 resize-none"
+              onChange={e => setEditedContent(e.target.value)}
+              className="w-full p-2 border rounded"
               rows={4}
             />
-            <div className="flex gap-2">
-              <button
-                onClick={handleEditSave}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Save
-              </button>
-              <button
-                onClick={handleEditCancel}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
+            <div className="flex gap-2 mt-2">
+              <button onClick={handleEditSave} className="px-3 py-1 bg-blue-600 text-white rounded">Save</button>
+              <button onClick={handleEditCancel} className="px-3 py-1 bg-gray-300 rounded">Cancel</button>
             </div>
           </div>
         )}
-
         {post.files?.length > 0 && (
-          <div className="grid grid-cols-2 gap-2">
-            {post.files.map((file) => (
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {post.files.map(file => (
               <div key={file._id}>
-                {file.fileType === 'image' ? (
-                  <img src={`${API_BASE_URL}${file.url}`} alt="post content" className="rounded-lg object-cover w-full h-auto" />
-                ) : (
-                  <video src={`${API_BASE_URL}${file.url}`} controls className="rounded-lg w-full" />
-                )}
+                {file.fileType === 'image' ? <img src={`${API_BASE_URL}${file.url}`} alt="post" className="w-full rounded" /> : <video src={`${API_BASE_URL}${file.url}`} controls className="w-full rounded" />}
               </div>
             ))}
           </div>
         )}
+        {post.location && (
+          <div className="mt-2 flex items-center gap-2 text-sm bg-gray-50 p-2 rounded">
+            <MapPin size={16} /> {post.location}
+          </div>
+        )}
       </div>
 
-      {/* Location */}
-      {post.location && (
-        <div className="my-3 p-3 bg-gray-50 rounded-lg text-sm flex items-center gap-2">
-          <MapPin size={16} className="text-gray-500" />
-          <strong>Location:</strong> {post.location}
+      <div className="flex justify-between items-center border-t pt-3">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleLike}
+              disabled={isReadOnly}
+              className={`flex items-center gap-1 hover:text-red-500 ${isLiked ? 'text-red-500' : ''}`}
+            >
+              <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} /> Like
+            </button>
+            <span onClick={handleLikesClick} className="cursor-pointer hover:underline text-sm">
+              {post.likes.length}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setShowComments(!showComments)} disabled={isReadOnly} className="flex items-center gap-1 hover:text-blue-500">
+              <MessageCircle size={18} /> Comment
+            </button>
+            <span onClick={() => setShowComments(true)} className="cursor-pointer hover:underline text-sm">
+              {post.comments?.length || 0}
+            </span>
+          </div>
+          <button onClick={handleShare} className="flex items-center gap-1 hover:text-green-500">
+            <Share2 size={18} /> Share
+          </button>
+        </div>
+      </div>
+
+      {showShareBox && (
+        <div className="mt-2 p-2 bg-gray-100 border rounded flex justify-between items-center">
+          <input
+            type="text"
+            readOnly
+            value={publicUrl}
+            className="flex-1 text-sm bg-transparent px-2"
+          />
+          <button onClick={() => copyToClipboard(publicUrl)} className="ml-2 px-3 py-1 bg-blue-500 text-white rounded">Copy</button>
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex justify-around items-center border-t pt-2">
-        <button onClick={handleLike} className={`flex items-center gap-2 hover:text-red-500 ${isLiked ? 'text-red-500 font-bold' : 'text-gray-600'}`}>
-          <Heart size={20} /> Like ({post.likes.length})
-        </button>
-        <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-2 text-gray-600 hover:text-blue-500">
-          <MessageCircle size={20} /> Comment ({post.comments.length})
-        </button>
-        <button onClick={handleShare} className="flex items-center gap-2 text-gray-600 hover:text-green-500">
-          <Share2 size={20} /> Share
-        </button>
-      </div>
-
-      {/* Comments */}
       {showComments && (
-        <div className="mt-4 border-t pt-4">
-          <form onSubmit={handleAddComment} className="flex items-center gap-2 mb-4">
-            <img
-              src={currentUser.profile?.avatar ? `${API_BASE_URL}${currentUser.profile.avatar}` : 'https://placehold.co/32x32'}
-              alt="You"
-              className="w-8 h-8 rounded-full"
-            />
-            <input
-              type="text"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Write a comment..."
-              className="flex-grow bg-gray-100 rounded-full px-4 py-2 focus:outline-none"
-            />
-            <button type="submit" className="p-2 text-blue-600 hover:bg-blue-100 rounded-full">
-              <Send size={20} />
-            </button>
-          </form>
-          <div className="space-y-3">
-            {post.comments.map((comment) => (
+        <div className="mt-4 pt-4 border-t space-y-3">
+          {currentUser && (
+            <form onSubmit={handleCommentSubmit} className="flex items-center gap-2 mb-3">
+              <img
+                src={currentUser.profile?.avatar ? `${API_BASE_URL}${currentUser.profile.avatar}` : 'https://placehold.co/32x32'}
+                alt="you"
+                className="w-8 h-8 rounded-full"
+              />
+              <input
+                type="text"
+                value={newComment}
+                onChange={e => setNewComment(e.target.value)}
+                placeholder="Write a comment..."
+                className="flex-grow bg-gray-100 rounded-full px-4 py-2"
+              />
+              <button type="submit" className="px-2 py-1 bg-blue-600 text-white rounded-full">
+                <Send size={20} />
+              </button>
+            </form>
+          )}
+
+          {post.comments
+            .slice()
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .map(comment => (
               <Comment
                 key={comment._id}
                 comment={comment}
@@ -404,10 +408,14 @@ const PostCard = ({ post, currentUser, onPostDelete, onUpdatePost }) => {
                 postOwnerId={post.user?._id}
                 onReplySubmit={handleReplySubmit}
                 onDeleteComment={handleDeleteComment}
+                isReadOnly={isReadOnly}
               />
             ))}
-          </div>
         </div>
+      )}
+
+      {showLikersModal && (
+        <LikersModal users={likers} onClose={() => setShowLikersModal(false)} />
       )}
     </div>
   );

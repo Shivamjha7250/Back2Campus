@@ -16,7 +16,7 @@ const ContributePage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Fetch all contributions from backend
+  
   const fetchContributions = async () => {
     try {
       setLoading(true);
@@ -36,7 +36,7 @@ const ContributePage = () => {
     fetchContributions();
   }, []);
 
-  // Submit new contribution
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (
@@ -62,7 +62,7 @@ const ContributePage = () => {
       const newContribution = await res.json();
       if (!res.ok) throw new Error(newContribution.message || 'Submission failed.');
       setContributions([newContribution, ...contributions]);
-      // Reset form fields
+      
       setTitle('');
       setDescription('');
       setOtherDetails('');
@@ -75,7 +75,7 @@ const ContributePage = () => {
     }
   };
 
-  // Handle upvote/un-upvote
+
   const handleUpvote = async (id) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/contributions/${id}/upvote`, {
@@ -91,7 +91,7 @@ const ContributePage = () => {
     }
   };
 
-  // Handle delete post - only allowed for post owner
+
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this post?')) return;
     try {
@@ -107,7 +107,7 @@ const ContributePage = () => {
     }
   };
 
-  // Add comment to contribution
+  
   const handleAddComment = async (postId) => {
     if (!commentText.trim()) return;
     try {
@@ -128,7 +128,7 @@ const ContributePage = () => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Contribution Form */}
+      
       <div className="lg:col-span-1">
         <div className="bg-white p-6 rounded-xl shadow sticky top-4">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -183,7 +183,7 @@ const ContributePage = () => {
         </div>
       </div>
 
-      {/* Contributions List */}
+    
       <div className="lg:col-span-2">
         <h2 className="text-xl font-bold mb-4">Community Suggestions</h2>
         {loading ? (
@@ -237,7 +237,7 @@ const ContributePage = () => {
                   </button>
                 </div>
 
-                {/* Comments Section */}
+                
                 {activeCommentPostId === post._id && (
                   <div className="mt-3">
                     <div className="space-y-2 max-h-40 overflow-y-auto border p-2 rounded">
@@ -249,7 +249,7 @@ const ContributePage = () => {
                           >
                             <strong>{c.user?.firstName || 'User'}:</strong>{' '}
                             {c.text}
-                            {/* You can extend here for reply feature */}
+                          
                           </div>
                         ))
                       ) : (

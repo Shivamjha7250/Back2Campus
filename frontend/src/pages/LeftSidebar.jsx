@@ -11,38 +11,41 @@ const LeftSidebar = ({ user, closeSidebar }) => {
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Notification States
+  
   const [newChat, setNewChat] = useState(localStorage.getItem('newChat') === 'true');
   const [newNotification, setNewNotification] = useState(localStorage.getItem('newNotification') === 'true');
   const [newRequest, setNewRequest] = useState(localStorage.getItem('newRequest') === 'true');
 
+  
   useEffect(() => {
     if (!socket.connected) {
       socket.connect();
     }
 
     const handleNewChat = () => {
-      console.log('Received new_chat event');
+      console.log(" New Chat Message");
       setNewChat(true);
       localStorage.setItem('newChat', 'true');
     };
 
     const handleNewNotification = () => {
-      console.log('Received new_notification event');
+      console.log(" New Notification");
       setNewNotification(true);
       localStorage.setItem('newNotification', 'true');
     };
 
     const handleNewRequest = () => {
-      console.log('Received new_request event');
+      console.log(" New Request Received");
       setNewRequest(true);
       localStorage.setItem('newRequest', 'true');
     };
 
+    
     socket.on('new_chat', handleNewChat);
     socket.on('new_notification', handleNewNotification);
     socket.on('new_request', handleNewRequest);
 
+    
     return () => {
       socket.off('new_chat', handleNewChat);
       socket.off('new_notification', handleNewNotification);
@@ -50,30 +53,35 @@ const LeftSidebar = ({ user, closeSidebar }) => {
     };
   }, []);
 
-  // Listen for localStorage changes from other tabs (cross-tab sync)
+  
   useEffect(() => {
     const syncNotificationFlags = (event) => {
       if (!event) return;
-      if (event.key === 'newChat') {
-        console.log('localStorage changed newChat:', event.newValue);
-        setNewChat(event.newValue === 'true');
-      }
-      if (event.key === 'newNotification') {
-        console.log('localStorage changed newNotification:', event.newValue);
-        setNewNotification(event.newValue === 'true');
-      }
-      if (event.key === 'newRequest') {
-        console.log('localStorage changed newRequest:', event.newValue);
-        setNewRequest(event.newValue === 'true');
-      }
+      if (event.key === 'newChat') setNewChat(event.newValue === 'true');
+      if (event.key === 'newNotification') setNewNotification(event.newValue === 'true');
+      if (event.key === 'newRequest') setNewRequest(event.newValue === 'true');
     };
 
     window.addEventListener('storage', syncNotificationFlags);
-
-    return () => {
-      window.removeEventListener('storage', syncNotificationFlags);
-    };
+    return () => window.removeEventListener('storage', syncNotificationFlags);
   }, []);
+
+  
+  const handleNavClick = (itemName) => {
+    if (itemName === 'Chat') {
+      setNewChat(false);
+      localStorage.setItem('newChat', 'false');
+    }
+    if (itemName === 'Notification') {
+      setNewNotification(false);
+      localStorage.setItem('newNotification', 'false');
+    }
+    if (itemName === 'Requested') {
+      setNewRequest(false);
+      localStorage.setItem('newRequest', 'false');
+    }
+    if (closeSidebar) closeSidebar();
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -81,25 +89,6 @@ const LeftSidebar = ({ user, closeSidebar }) => {
       localStorage.setItem(key, 'false');
     });
     navigate('/login');
-  };
-
-  const handleNavClick = (itemName) => {
-    if (itemName === 'Chat') {
-      console.log('Clearing newChat notification');
-      setNewChat(false);
-      localStorage.setItem('newChat', 'false');
-    }
-    if (itemName === 'Notification') {
-      console.log('Clearing newNotification notification');
-      setNewNotification(false);
-      localStorage.setItem('newNotification', 'false');
-    }
-    if (itemName === 'Requested') {
-      console.log('Clearing newRequest notification');
-      setNewRequest(false);
-      localStorage.setItem('newRequest', 'false');
-    }
-    if (closeSidebar) closeSidebar();
   };
 
   const navItems = [
@@ -132,29 +121,36 @@ const LeftSidebar = ({ user, closeSidebar }) => {
         <h1 className="text-xl sm:text-2xl font-bold text-blue-600">Back2Campus</h1>
       </div>
 
-      <nav className="flex-grow space-y-2">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.name}
-            to={item.path}
-            onClick={() => handleNavClick(item.name)}
-            className={({ isActive }) =>
-              `flex items-center justify-between px-3 py-3 rounded-lg font-medium transition-colors 
-              ${isActive ? 'bg-blue-100 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`
-            }
-          >
-            <div className="flex items-center gap-4">
-              <item.icon size={22} />
-              <span>{item.name}</span>
-            </div>
-
-            {(item.name === 'Chat' && newChat) ||
+      <nav className="flex-grow space-y-2 overflow-visible">
+        {navItems.map((item) => {
+          const showDot =
+            (item.name === 'Chat' && newChat) ||
             (item.name === 'Notification' && newNotification) ||
-            (item.name === 'Requested' && newRequest) ? (
-              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-            ) : null}
-          </NavLink>
-        ))}
+            (item.name === 'Requested' && newRequest);
+
+          return (
+            <NavLink
+              key={item.name}
+              to={item.path}
+              onClick={() => handleNavClick(item.name)}
+              className={({ isActive }) =>
+                `relative flex items-center justify-between px-3 py-3 rounded-lg font-medium transition-colors
+                ${isActive ? 'bg-blue-100 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`
+              }
+            >
+              <div className="flex items-center gap-4 relative w-full">
+                <div className="relative">
+                  <item.icon size={22} />
+
+                  {showDot && (
+                    <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 animate-pulse z-10 ring-2 ring-white" />
+                  )}
+                </div>
+                <span>{item.name}</span>
+              </div>
+            </NavLink>
+          );
+        })}
       </nav>
 
       <div className="mt-6 border-t pt-4">
@@ -170,7 +166,9 @@ const LeftSidebar = ({ user, closeSidebar }) => {
               className="h-10 w-10 rounded-full object-cover"
             />
             <div>
-              <p className="font-bold text-sm">{user.firstName} {user.lastName}</p>
+              <p className="font-bold text-sm">
+                {user.firstName} {user.lastName}
+              </p>
             </div>
           </div>
           <button

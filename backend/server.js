@@ -16,7 +16,6 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// Get local IPv4 address for LAN access
 const getLocalIP = () => {
   const nets = os.networkInterfaces();
   for (const name of Object.keys(nets)) {
@@ -32,7 +31,6 @@ const getLocalIP = () => {
 const localIP = getLocalIP();
 const localIPUrl = `http://${localIP}:5173`;
 
-// Prepare allowed origins for CORS
 let allowedOrigins = process.env.FRONTEND_URLS
   ? process.env.FRONTEND_URLS.split(',').map((url) => url.trim())
   : [];
@@ -41,7 +39,6 @@ allowedOrigins = [...new Set(allowedOrigins)];
 
 console.log(' Allowed Origins:', allowedOrigins);
 
-// Setup Socket.IO with CORS
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -50,13 +47,12 @@ const io = new Server(server, {
   },
 });
 
-// Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log(' MongoDB connected'))
   .catch((err) => console.error(' MongoDB connection error:', err));
 
-// Middleware
+
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(
@@ -68,7 +64,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-//  Static file serving with proper CORS headers for images
+
 app.use('/uploads', express.static(join(process.cwd(), 'uploads'), {
   setHeaders: (res, path, stat) => {
     res.set('Access-Control-Allow-Origin', '*');
@@ -76,13 +72,13 @@ app.use('/uploads', express.static(join(process.cwd(), 'uploads'), {
   }
 }));
 
-// Attach Socket.IO instance to each request
+
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-// Routes
+
 import authRoutes from './routes/auth.js';
 import postRoutes from './routes/post.js';
 import userRoutes from './routes/user.js';
@@ -99,16 +95,15 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/connections', connectionRoutes);
 app.use('/api/contributions', contributionRoutes);
 
-// Basic root route
+
 app.get('/', (req, res) => res.send(' API is running'));
 
-// Global error handler
+
 app.use((err, req, res, next) => {
   console.error(' Express error:', err);
   res.status(500).json({ message: 'Internal Server Error' });
 });
 
-// Initialize Socket.IO event handlers
 initSocket(io);
 
 const PORT = process.env.PORT || 5000;
@@ -118,7 +113,6 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   Network:   http://${localIP}:${PORT}`);
 });
 
-// Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\n💤 Shutting down gracefully...');
   mongoose.connection.close(false, () => {

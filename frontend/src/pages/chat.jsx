@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import ChatList from '../components/ChatList';
 import ChatView from '../components/ChatView';
 import { socket } from '../socket';
@@ -11,22 +10,13 @@ const ChatPage = () => {
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [typingUsers, setTypingUsers] = useState({});
-    
-    const location = useLocation();
-    const navigate = useNavigate();
+    const [unreadCounts, setUnreadCounts] = useState({});
 
     useEffect(() => {
-        try {
-            const storedUser = JSON.parse(localStorage.getItem('user'));
-            if (storedUser) {
-                setUser(storedUser);
-            } else {
-                setLoading(false);
-            }
-        } catch (e) {
-            console.error("Failed to parse user from local storage", e);
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        if (storedUser) {
+            setUser(storedUser);
+        } else {
             setLoading(false);
         }
     }, []);
@@ -34,51 +24,22 @@ const ChatPage = () => {
     const fetchConversations = useCallback(async () => {
         if (!user) return;
         setLoading(true);
-        setError(null);
         try {
             const token = localStorage.getItem('token');
-            if (!token) throw new Error("Authentication token not found.");
-
             const res = await fetch(`${API_BASE_URL}/api/chat/conversations`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({ message: res.statusText }));
-                throw new Error(errorData.message || `Failed to fetch conversations: ${res.statusText}`);
-            }
-            
             const data = await res.json();
             setConversations(data);
-            
             if (socket.connected) {
                 socket.emit('joinConversations', data.map(c => c._id));
             }
         } catch (e) {
             console.error("Fetch Conversations Error:", e);
-            setError(e.message);
         } finally {
             setLoading(false);
         }
     }, [user]);
-
-    useEffect(() => {
-        if (user) {
-            fetchConversations();
-        }
-    }, [user, fetchConversations]);
-
-    useEffect(() => {
-        if (location.state?.conversation) {
-            const newConversation = location.state.conversation;
-            setSelectedChat(newConversation);
-            setConversations(prev => {
-                const isAlreadyInList = prev.some(c => c._id === newConversation._id);
-                return isAlreadyInList ? prev : [newConversation, ...prev];
-            });
-            navigate(location.pathname, { replace: true, state: {} });
-        }
-    }, [location.state, navigate]);
 
     useEffect(() => {
         if (!user) return;
@@ -88,65 +49,66 @@ const ChatPage = () => {
             socket.connect();
         }
 
+        fetchConversations();
+
         const handleOnlineUsers = (users) => setOnlineUsers(users);
-        
-        const handleTyping = ({ conversationId, userId }) => {
-            setTypingUsers(prev => ({ ...prev, [conversationId]: userId }));
-            setTimeout(() => {
-                setTypingUsers(prev => {
-                    const newTypingUsers = { ...prev };
-                    delete newTypingUsers[conversationId];
-                    return newTypingUsers;
-                });
-            }, 3000);
-        };
 
         const handleNewMessage = (newMessage) => {
-            setConversations(prevConvos => {
-                const convoToUpdate = prevConvos.find(c => c._id === newMessage.conversationId);
-                if (!convoToUpdate) { 
-                    fetchConversations();
-                    return prevConvos;
-                }
-                const updatedConvo = { ...convoToUpdate, lastMessage: newMessage };
-                const otherConvos = prevConvos.filter(c => c._id !== newMessage.conversationId);
+            setConversations(prev => {
+                const convoToUpdate = prev.find(c => c._id === newMessage.conversationId);
+                if (!convoToUpdate) return prev;
+                const updatedConvo = { ...convoToUpdate, lastMessage: newMessage, lastMessageTimestamp: newMessage.createdAt };
+                const otherConvos = prev.filter(c => c._id !== newMessage.conversationId);
                 return [updatedConvo, ...otherConvos];
             });
         };
         
-        const handleMessageDeleted = () => fetchConversations();
+        const handleNewChat = ({ conversationId }) => {
+            if (selectedChat?._id !== conversationId) {
+                setUnreadCounts(prev => ({
+                    ...prev,
+                    [conversationId]: (prev[conversationId] || 0) + 1
+                }));
+            }
+        };
 
         socket.on('onlineUsers', handleOnlineUsers);
-        socket.on('typing', handleTyping);
         socket.on('newMessage', handleNewMessage);
-        socket.on('messageDeleted', handleMessageDeleted);
+        socket.on('new_chat', handleNewChat);
 
         return () => {
             socket.off('onlineUsers', handleOnlineUsers);
-            socket.off('typing', handleTyping);
             socket.off('newMessage', handleNewMessage);
-            socket.off('messageDeleted', handleMessageDeleted);
+            socket.off('new_chat', handleNewChat);
         };
-    }, [user, fetchConversations]);
+    }, [user, fetchConversations, selectedChat]);
 
-    const handleSelectChat = useCallback((chat) => setSelectedChat(chat), []);
+    
+    const handleSelectChat = useCallback((chat) => {
+        setSelectedChat(chat);
+        setUnreadCounts(prev => ({ ...prev, [chat._id]: 0 }));
+        
+        if (socket.connected && user) {
+            socket.emit('mark_as_seen', { conversationId: chat._id, userId: user._id });
+        }
+    }, [user]);
+    
     const handleBack = useCallback(() => setSelectedChat(null), []);
 
     return (
-        <div className="flex h-screen bg-white">
-            <div className={`w-full sm:w-1/3 border-r ${selectedChat ? 'hidden sm:block' : 'block'}`}>
+        <div className="flex h-[calc(100vh-80px)] bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div className={`w-full md:w-1/3 border-r transition-transform duration-300 ${selectedChat ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}`}>
                 <ChatList
                     currentUser={user}
                     conversations={conversations}
-                    selectedChat={selectedChat}
                     onSelectChat={handleSelectChat}
                     onlineUsers={onlineUsers}
+                    selectedChat={selectedChat}
+                    unreadCounts={unreadCounts}
                     loading={loading}
-                    error={error}
-                    typingUsers={typingUsers}
                 />
             </div>
-            <div className={`w-full sm:w-2/3 ${selectedChat ? 'block' : 'hidden sm:block'}`}>
+            <div className={`absolute top-0 left-0 w-full h-full md:static md:w-2/3 transition-transform duration-300 ${selectedChat ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
                 <ChatView
                     currentUser={user}
                     selectedChat={selectedChat}

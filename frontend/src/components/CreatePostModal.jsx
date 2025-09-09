@@ -69,7 +69,7 @@ const CreatePostModal = ({ user, onClose, onPostSuccess }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-                {/* Header */}
+        
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-xl font-bold">Create Post</h2>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-200">
@@ -77,7 +77,7 @@ const CreatePostModal = ({ user, onClose, onPostSuccess }) => {
                     </button>
                 </div>
 
-                {/* Form Body */}
+                
                 <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto p-4">
                     <div className="flex items-start gap-4">
                         <img src={user.avatar || 'https://placehold.co/40x40/EFEFEF/AAAAAA&text=A'} alt="user" className="w-10 h-10 rounded-full" />
@@ -90,7 +90,7 @@ const CreatePostModal = ({ user, onClose, onPostSuccess }) => {
                         />
                     </div>
 
-                    {/* File Previews */}
+        
                     {filePreviews.length > 0 && (
                         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
                             {filePreviews.map((preview, index) => (
@@ -108,7 +108,7 @@ const CreatePostModal = ({ user, onClose, onPostSuccess }) => {
                         </div>
                     )}
 
-                    {/* Location Inputs */}
+                    
                     <div className="mt-4 border-t pt-4">
                         <div className="flex items-center gap-2 text-gray-600 mb-2">
                             <MapPin size={20} />
@@ -132,7 +132,7 @@ const CreatePostModal = ({ user, onClose, onPostSuccess }) => {
                         </div>
                     </div>
 
-                    {/* Hidden file input */}
+                
                     <input
                         type="file"
                         multiple
@@ -143,7 +143,7 @@ const CreatePostModal = ({ user, onClose, onPostSuccess }) => {
                     />
                 </form>
 
-                {/* Footer with Action Buttons */}
+            
                 <div className="p-4 border-t">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-4">

@@ -3,10 +3,46 @@ import axios from 'axios';
 import API_BASE_URL from './apiConfig'; 
 import { useSelector } from 'react-redux';
 import PostCard from '../components/PostCard'; 
+import { socket } from '../socket';
 
 const MyPosts = () => {
   const [posts, setPosts] = useState([]);
   const user = useSelector(state => state.auth.user);
+
+  
+  const handleUpdatePost = (updatedPost) => {
+      console.log("MyPosts component received an update from the server:", updatedPost);
+    setPosts(currentPosts =>
+      currentPosts.map(post => 
+        post._id === updatedPost._id ? updatedPost : post
+      )
+    );
+  };
+  
+  const handlePostDelete = (postId) => {
+    setPosts(prevPosts => prevPosts.filter(post => post._id !== postId));
+  };
+  
+  useEffect(() => {
+    const handleUpdate = (updatedPost) => {
+      
+      if (updatedPost.user._id === user?._id) {
+        handleUpdatePost(updatedPost);
+      }
+    };
+    
+    const handleDelete = ({ postId }) => {
+      handlePostDelete(postId);
+    };
+
+    socket.on('update_post', handleUpdate);
+    socket.on('delete_post', handleDelete);
+
+    return () => {
+      socket.off('update_post', handleUpdate);
+      socket.off('delete_post', handleDelete);
+    };
+  }, [user]); 
 
   useEffect(() => {
     if (user) {
@@ -16,47 +52,16 @@ const MyPosts = () => {
 
   const fetchUserPosts = async () => {
     try {
+      const token = localStorage.getItem('token');
       const res = await axios.get(`${API_BASE_URL}/api/posts/me`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setPosts(res.data);
     } catch (err) {
       console.error('Error fetching user posts:', err);
     }
   };
-
-  const handleDelete = async (postId) => {
-    try {
-      await axios.delete(`${API_BASE_URL}/api/posts/${postId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      setPosts(prev => prev.filter(post => post._id !== postId));
-    } catch (err) {
-      console.error('Delete failed:', err);
-    }
-  };
-
-  const handleEdit = async (postId, newContent, newLocation) => {
-    try {
-      await axios.put(
-        `${API_BASE_URL}/api/posts/${postId}`,
-        { content: newContent, location: newLocation },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
-      fetchUserPosts();
-    } catch (err) {
-      console.error('Edit failed:', err);
-    }
-  };
-
+  
   return (
     <div className="p-4 max-w-3xl mx-auto">
       <h2 className="text-2xl font-bold mb-4">My Posts</h2>
@@ -67,11 +72,9 @@ const MyPosts = () => {
           <PostCard
             key={post._id}
             post={post}
-            isMyPost={true}
-            onDelete={() => handleDelete(post._id)}
-            onEdit={(newContent, newLocation) =>
-              handleEdit(post._id, newContent, newLocation)
-            }
+            currentUser={user}
+            onUpdatePost={handleUpdatePost}
+            onPostDelete={handlePostDelete}
           />
         ))
       )}

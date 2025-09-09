@@ -13,11 +13,10 @@ export const getRequests = async (req, res) => {
 export const respondToRequest = async (req, res) => {
   try {
     const { requestId, action } = req.body;
-    await Request.findByIdAndDelete(requestId); // Remove request from DB
+    await Request.findByIdAndDelete(requestId); 
 
-    // Optional: Add to connections if accepted
     if (action === 'accept') {
-      // Save connection logic here
+    
     }
 
     res.json({ message: `Request ${action}ed.` });

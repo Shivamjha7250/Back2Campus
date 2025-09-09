@@ -4,7 +4,7 @@ import {
   FaShareAlt, 
   FaTrash, 
   FaEdit, 
-  FaComments 
+  FaComments
 } from 'react-icons/fa';
 
 import { MdLocationOn } from 'react-icons/md';

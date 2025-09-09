@@ -1,4 +1,3 @@
-// File: OtpVerificationPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import API_BASE_URL from '../pages/apiConfig';
@@ -55,7 +54,7 @@ const OtpVerificationPage = () => {
 
       if (redirect === '/reset-password') {
         navigate('/reset-password', {
-          state: { userId, otp }, // ✅ Pass OTP also
+          state: { userId, otp }, 
         });
       } else if (data.token) {
         localStorage.setItem('token', data.token);

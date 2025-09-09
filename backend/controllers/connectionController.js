@@ -1,8 +1,9 @@
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
-import Conversation from '../models/conversationModel.js'; 
+import Conversation from '../models/conversationModel.js';
+import { getSocketId } from '../socket.js'; 
 
-// 1. Send Connection Request
+
 export const sendRequest = async (req, res) => {
     const senderId = req.user.id;
     const { receiverId } = req.body;
@@ -12,26 +13,42 @@ export const sendRequest = async (req, res) => {
     }
 
     try {
+        
         await User.updateOne({ _id: senderId }, { $addToSet: { sentRequests: receiverId } });
         await User.updateOne({ _id: receiverId }, { $addToSet: { receivedRequests: senderId } });
 
         const sender = await User.findById(senderId).select('firstName lastName userType profile.avatar');
-        const newRequest = {
-            _id: sender._id,
+        
+        const newRequestPayload = {
+            _id: senderId,
             sender: sender
         };
-        req.io.emit(`connection_request_${receiverId}`, newRequest);
+
+        const receiverSocketId = getSocketId(receiverId);
+
+    
+        if (receiverSocketId) {
+        
+            req.io.to(receiverSocketId).emit(`connection_request_${receiverId}`, newRequestPayload);
+            
+            
+            req.io.to(receiverSocketId).emit('new_request');
+            
+            console.log(` Emitted connection events to socket: ${receiverSocketId}`);
+        } else {
+            console.log(`User ${receiverId} is not online.`);
+        }
 
         res.status(200).json({ message: 'Request sent successfully.' });
     } catch (error) {
+        console.error("Error sending request:", error);
         res.status(500).json({ message: 'Server error while sending request.' });
     }
 };
 
-// 2. Respond to a Request (Accept/Reject)
 export const respondToRequest = async (req, res) => {
     const receiverId = req.user.id;
-    const { requestId, action } = req.body; // requestId is the sender's ID
+    const { requestId, action } = req.body; 
 
     try {
         await User.updateOne({ _id: receiverId }, { $pull: { receivedRequests: requestId } });
@@ -40,7 +57,6 @@ export const respondToRequest = async (req, res) => {
         if (action === 'accept') {
             await User.updateOne({ _id: receiverId }, { $addToSet: { connections: requestId } });
             await User.updateOne({ _id: requestId }, { $addToSet: { connections: receiverId } });
-
             
             const existingConversation = await Conversation.findOne({
                 members: { $all: [receiverId, requestId] }
@@ -56,8 +72,11 @@ export const respondToRequest = async (req, res) => {
             const newConnectionForReceiver = await User.findById(requestId).select('firstName lastName userType profile.avatar');
             const newConnectionForSender = await User.findById(receiverId).select('firstName lastName userType profile.avatar');
             
-            req.io.emit(`new_connection_${receiverId}`, newConnectionForSender);
-            req.io.emit(`new_connection_${requestId}`, newConnectionForReceiver);
+            const receiverSocketId = getSocketId(receiverId);
+            if(receiverSocketId) req.io.to(receiverSocketId).emit(`new_connection_${receiverId}`, newConnectionForSender);
+
+            const senderSocketId = getSocketId(requestId);
+            if(senderSocketId) req.io.to(senderSocketId).emit(`new_connection_${requestId}`, newConnectionForReceiver);
         }
         
         const notification = new Notification({
@@ -68,7 +87,12 @@ export const respondToRequest = async (req, res) => {
         await notification.save();
         
         const populatedNotification = await Notification.findById(notification._id).populate('sender', 'firstName lastName profile.avatar');
-        req.io.emit(`notification_${requestId}`, populatedNotification);
+        
+        const senderSocketId = getSocketId(requestId);
+        if(senderSocketId) req.io.to(senderSocketId).emit(`notification_${requestId}`, populatedNotification);
+        
+        if(senderSocketId) req.io.to(senderSocketId).emit('new_notification');
+
 
         res.status(200).json({ message: `Request ${action}ed successfully.` });
     } catch (error) {
@@ -77,14 +101,16 @@ export const respondToRequest = async (req, res) => {
     }
 };
 
-// 3. Get Received Requests
 export const getReceivedRequests = async (req, res) => {
     try {
         const user = await User.findById(req.user.id)
-            .populate('receivedRequests', 'firstName lastName userType profile.avatar');
+            .populate({
+                path: 'receivedRequests',
+                select: 'firstName lastName userType profile.avatar'
+            });
         
         const formattedRequests = user.receivedRequests.map(sender => ({
-            _id: sender._id,
+            _id: sender._id, 
             sender: sender
         }));
         res.status(200).json(formattedRequests);
@@ -93,7 +119,6 @@ export const getReceivedRequests = async (req, res) => {
     }
 };
 
-// 4. Get My Connections
 export const getMyConnections = async (req, res) => {
     try {
         const user = await User.findById(req.user.id)
@@ -104,7 +129,6 @@ export const getMyConnections = async (req, res) => {
     }
 };
 
-// 5. Remove Connection
 export const removeConnection = async (req, res) => {
     const userId = req.user.id;
     const { connectionId } = req.params;
@@ -113,8 +137,11 @@ export const removeConnection = async (req, res) => {
         await User.updateOne({ _id: userId }, { $pull: { connections: connectionId } });
         await User.updateOne({ _id: connectionId }, { $pull: { connections: userId } });
 
-        req.io.emit(`connection_removed_${userId}`, { connectionId });
-        req.io.emit(`connection_removed_${connectionId}`, { connectionId: userId });
+        const userSocketId = getSocketId(userId);
+        if(userSocketId) req.io.to(userSocketId).emit(`connection_removed_${userId}`, { connectionId });
+
+        const connectionSocketId = getSocketId(connectionId);
+        if(connectionSocketId) req.io.to(connectionSocketId).emit(`connection_removed_${connectionId}`, { connectionId: userId });
 
         res.status(200).json({ message: 'Connection removed successfully.' });
     } catch (error) {

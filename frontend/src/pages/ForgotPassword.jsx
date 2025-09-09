@@ -45,10 +45,10 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/*  Back2Campus Logo Header at Top */}
+      
       <LogoHeader />
 
-      {/*  Centered Forgot Password Form */}
+    
       <div className="flex-grow flex items-center justify-center px-4">
         <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
           <h2 className="text-2xl font-bold text-center text-blue-600 mb-4">Forgot Password</h2>

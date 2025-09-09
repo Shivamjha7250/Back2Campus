@@ -1,4 +1,3 @@
-// File: frontend/pages/CreatePostPage.jsx
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOutletContext } from 'react-router-dom';
@@ -73,7 +72,7 @@ const CreatePostPage = () => {
                     />
                 </div>
 
-                {/* File Previews with Remove Button */}
+            
                 {files.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
                         {files.map((file, index) => {
@@ -102,7 +101,7 @@ const CreatePostPage = () => {
                     </div>
                 )}
 
-                {/* Input Box */}
+            
                 <div className="mt-4 border-t pt-4">
                     <div className="flex items-center gap-2 text-gray-600 mb-2">
                         <MapPin size={20} />

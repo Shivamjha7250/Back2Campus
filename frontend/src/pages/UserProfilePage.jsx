@@ -69,7 +69,7 @@ const UserProfilePage = () => {
         <div className="max-w-2xl mx-auto mt-6 px-4">
             <h2 className="text-2xl font-bold mb-4">{profileUser?.firstName}'s Profile</h2>
             
-            {/* Pass button info as props */}
+            
             <UserProfileCard
                 user={profileUser}
                 connectionStatus={connectionStatus}

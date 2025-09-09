@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 
-
 const replySchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     text: { type: String, required: true },
@@ -8,7 +7,7 @@ const replySchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-// Comment Schema
+
 const commentSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     text: { type: String, required: true },
@@ -26,8 +25,13 @@ const postSchema = new mongoose.Schema(
             fileType: { type: String, enum: ['image', 'video', 'document'], required: true },
         }],
         location: { type: String, trim: true },
-        likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-        comments: [commentSchema], //  Updated comment schema
+        
+        likes: [{
+            user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            createdAt: { type: Date, default: Date.now }
+        }],
+
+        comments: [commentSchema],
     },
     { timestamps: true }
 );

@@ -34,7 +34,7 @@ const ResetPassword = () => {
       const res = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, newPassword: password }), // ✅ OTP removed
+        body: JSON.stringify({ userId, newPassword: password }), 
       });
 
       const data = await res.json();

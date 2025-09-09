@@ -16,7 +16,6 @@ import protect from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// --- Chat API Routes ---
 
 router.post('/initiate', protect, initiateConversation);
 router.post('/clear/:conversationId', protect, clearChat);

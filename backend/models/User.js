@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-// Sub-schemas for structuring profile data
+
 const educationSchema = new mongoose.Schema({
   institution: { type: String, trim: true, default: '' },
   degree: { type: String, trim: true, default: '' },

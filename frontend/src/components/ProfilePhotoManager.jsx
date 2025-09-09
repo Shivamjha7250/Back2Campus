@@ -7,12 +7,12 @@ const ProfilePhotoManager = ({ user, onPhotoUpdate = () => {} }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Use a placeholder if the avatar URL is missing
+  
   const avatarUrl = user.profile?.avatar
     ? `${API_BASE_URL}${user.profile.avatar}`
     : 'https://placehold.co/128x128';
 
-  // Handles the file selection and upload
+
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -38,18 +38,18 @@ const ProfilePhotoManager = ({ user, onPhotoUpdate = () => {} }) => {
 
   
   const handleRemovePhoto = async () => {
-    // Ask for confirmation before deleting
+  
     if (window.confirm('Are you sure you want to remove your profile picture?')) {
       try {
         const token = localStorage.getItem('token');
         await axios.delete(`${API_BASE_URL}/api/users/profile-picture`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        onPhotoUpdate(''); // Notify parent component that the photo is removed
+        onPhotoUpdate(''); 
         setMenuOpen(false);
       } catch (error) {
         console.error('Failed to remove photo:', error);
-        // Optionally, show an error message to the user
+      
       }
     }
   };
@@ -62,7 +62,7 @@ const ProfilePhotoManager = ({ user, onPhotoUpdate = () => {} }) => {
         className="w-full h-full rounded-full object-cover border-4 border-white shadow-md"
       />
 
-      {/* Edit button to open the menu */}
+    
       <button
         onClick={() => setMenuOpen(!menuOpen)}
         className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -70,7 +70,7 @@ const ProfilePhotoManager = ({ user, onPhotoUpdate = () => {} }) => {
         <Camera size={20} />
       </button>
 
-      {/* Hidden file input, triggered programmatically */}
+    
       <input
         type="file"
         ref={fileInputRef}
@@ -79,7 +79,6 @@ const ProfilePhotoManager = ({ user, onPhotoUpdate = () => {} }) => {
         accept="image/png, image/jpeg, image/jpg"
       />
 
-      {/* Dropdown menu for actions */}
       {menuOpen && (
         <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg border z-20 text-gray-700 text-sm">
           <a

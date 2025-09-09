@@ -25,7 +25,7 @@ const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) =>
                 <h3 className="text-2xl font-bold mb-1">{user.firstName} {user.lastName}</h3>
                 <p className="text-md text-gray-500 capitalize mb-4">{user.userType}</p>
 
-                {/*button*/}
+            
                 {!isOwnProfile && connectionStatus && (
                     <button
                         onClick={onConnect}
@@ -43,7 +43,7 @@ const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) =>
             </div>
             
             <div className="text-left pt-4 border-t border-gray-200 space-y-3">
-                {/* Educational History */}
+            
                 <div className="text-sm">
                     <strong>Educational History:</strong>
                     {user.profile?.education && user.profile.education.length > 0 && user.profile.education[0].institution ? (
@@ -59,7 +59,7 @@ const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) =>
                     )}
                 </div>
 
-                {/* Internship */}
+            
                 <div className="text-sm">
                     <strong>Internship:</strong>
                     {user.profile?.internship?.company ? (
@@ -72,7 +72,7 @@ const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) =>
                     )}
                 </div>
 
-                {/* Current Job */}
+            
                 <div className="text-sm">
                     <strong>Current Job:</strong>
                     {user.profile?.currentJob?.company ? (
@@ -84,7 +84,7 @@ const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) =>
                     )}
                 </div>
 
-                {/* Previous Job */}
+                
                 <div className="text-sm">
                     <strong>Previous Job:</strong>
                     {user.profile?.previousJob?.company ? (

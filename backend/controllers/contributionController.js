@@ -1,7 +1,7 @@
 import Contribution from '../models/Contribution.js';
 import path from 'path';
 
-// 1. Create a new contribution (with file upload support)
+
 export const createContribution = async (req, res) => {
   const { userId, title, description, category } = req.body;
 
@@ -10,7 +10,7 @@ export const createContribution = async (req, res) => {
     let fileType = null;
 
     if (req.file) {
-      fileUrl = `/uploads/${req.file.filename}`; // assuming static serve folder
+      fileUrl = `/uploads/${req.file.filename}`; 
       const ext = path.extname(req.file.filename).toLowerCase();
 
       if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
@@ -45,7 +45,6 @@ export const createContribution = async (req, res) => {
   }
 };
 
-// 2. Get all contributions with populated user and commenters info
 export const getContributions = async (req, res) => {
   try {
     const contributions = await Contribution.find()
@@ -60,7 +59,6 @@ export const getContributions = async (req, res) => {
   }
 };
 
-// 3. Upvote or remove upvote
 export const upvoteContribution = async (req, res) => {
   const { userId } = req.body;
   const { id: contributionId } = req.params;
@@ -73,9 +71,9 @@ export const upvoteContribution = async (req, res) => {
 
     const index = contribution.upvotes.indexOf(userId);
     if (index > -1) {
-      contribution.upvotes.splice(index, 1); // remove upvote
+      contribution.upvotes.splice(index, 1);
     } else {
-      contribution.upvotes.push(userId); // add upvote
+      contribution.upvotes.push(userId); 
     }
 
     await contribution.save();
@@ -91,7 +89,6 @@ export const upvoteContribution = async (req, res) => {
   }
 };
 
-// 4. Delete a contribution
 export const deleteContribution = async (req, res) => {
   const { id } = req.params;
   const { userId } = req.body;
@@ -115,7 +112,6 @@ export const deleteContribution = async (req, res) => {
   }
 };
 
-// 5. Add a comment to a contribution
 export const addCommentToContribution = async (req, res) => {
   const { id } = req.params;
   const { userId, text } = req.body;
@@ -145,7 +141,7 @@ export const addCommentToContribution = async (req, res) => {
     res.status(500).json({ message: 'Server error while adding comment.' });
   }
 };
-//  6. Get recent contributions (last 24 hours)
+
 export const getRecentContributions = async (req, res) => {
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);

@@ -2,7 +2,6 @@ import Chat from '../models/chatModel.js';
 import Conversation from '../models/conversationModel.js';
 import path from 'path';
 
-// Helper function to determine message type from file
 const getMessageTypeFromFile = (file) => {
     if (!file || !file.originalname) return 'doc';
     const extension = path.extname(file.originalname).toLowerCase();
@@ -12,7 +11,7 @@ const getMessageTypeFromFile = (file) => {
     return 'doc';
 };
 
-// Find or create a conversation
+
 export const initiateConversation = async (req, res) => {
     const senderId = req.user._id;
     const { receiverId } = req.body;
@@ -27,7 +26,7 @@ export const initiateConversation = async (req, res) => {
                 members: [senderId, receiverId],
             });
             await conversation.save();
-            // Re-populate after saving to get all member details
+
             conversation = await Conversation.findById(conversation._id).populate('members', 'firstName lastName profile');
         }
 
@@ -38,7 +37,6 @@ export const initiateConversation = async (req, res) => {
     }
 };
 
-// Get all conversations for the logged-in user
 export const getConversations = async (req, res) => {
     try {
         const conversations = await Conversation.find({ members: req.user._id })
@@ -56,7 +54,6 @@ export const getConversations = async (req, res) => {
     }
 };
 
-// Get messages for a specific conversation
 export const getMessages = async (req, res) => {
     try {
         const messages = await Chat.find({
@@ -70,7 +67,6 @@ export const getMessages = async (req, res) => {
     }
 };
 
-// Send a regular text message
 export const sendMessage = async (req, res) => {
     try {
         const { conversationId, text, replyTo } = req.body;
@@ -91,7 +87,6 @@ export const sendMessage = async (req, res) => {
     }
 };
 
-// Send a file message
 export const sendFileMessage = async (req, res) => {
     try {
         const { conversationId } = req.body;
@@ -120,7 +115,6 @@ export const sendFileMessage = async (req, res) => {
     }
 };
 
-// Edit a message
 export const editMessage = async (req, res) => {
     try {
         const { messageId } = req.params;
@@ -148,7 +142,6 @@ export const editMessage = async (req, res) => {
     }
 };
 
-// Delete message for the current user only
 export const deleteMessageForMe = async (req, res) => {
     try {
         await Chat.findByIdAndUpdate(req.params.messageId, {
@@ -161,7 +154,7 @@ export const deleteMessageForMe = async (req, res) => {
     }
 };
 
-// Delete message for everyone in the chat
+
 export const deleteMessageForEveryone = async (req, res) => {
     try {
         const msg = await Chat.findById(req.params.messageId);
@@ -185,7 +178,7 @@ export const deleteMessageForEveryone = async (req, res) => {
 export const clearChat = async (req, res) => {
     try {
         const { conversationId } = req.params;
-        // This only hides messages for the user, doesn't delete them
+    
         await Chat.updateMany(
             { conversationId: conversationId },
             { $addToSet: { deletedBy: req.user._id } }

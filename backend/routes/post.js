@@ -11,27 +11,37 @@ import {
     replyToComment,
     deleteComment,
     deleteReply,
-    likeReply
+    likeReply,
+    getPostById,
+    getPostLikers,
+    getPublicPostById 
 } from '../controllers/postController.js';
 import { uploadPostFiles } from '../config/multer.js'; 
 import auth from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// Routes for posts
+
 router.get('/', auth, getAllPosts);
 router.post('/create', auth, uploadPostFiles.array('files'), createPost);
+
 router.get('/user/:userId', auth, getMyPosts);
+router.get('/public/:id', getPublicPostById); 
+router.get('/:id/likers', auth, getPostLikers); 
+
+
+router.get('/:id', auth, getPostById); 
+
+
 router.put('/:id', auth, editPost);
 router.delete('/:id', auth, deletePost);
 router.put('/:id/like', auth, toggleLike);
 
-// Routes for comments
+
 router.post('/:id/comment', auth, addComment);
 router.put('/:postId/comments/:commentId/like', auth, likeComment);
 router.delete('/:postId/comments/:commentId', auth, deleteComment);
 
-// Routes for replies to comments
 router.post('/:postId/comments/:commentId/reply', auth, replyToComment);
 router.delete('/:postId/comments/:commentId/replies/:replyId', auth, deleteReply);
 router.put('/:postId/comments/:commentId/replies/:replyId/like', auth, likeReply);

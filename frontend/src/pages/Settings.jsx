@@ -9,28 +9,28 @@ const SettingsPage = () => {
     const { user: currentUser } = useOutletContext();
     const [activeTab, setActiveTab] = useState('profile');
 
-    // --- Profile States ---
+    
     const [profileData, setProfileData] = useState({
         firstName: currentUser.firstName || '',
         lastName: currentUser.lastName || '',
         userType: currentUser.userType || 'Student',
     });
 
-    // --- Education & Career States ---
+    
     const [education, setEducation] = useState(currentUser.profile?.education || [{ institution: '', degree: '', field: '' }]);
-    // ✨ NEW: States for Internship and Job
+    
     const [internship, setInternship] = useState(currentUser.profile?.internship || { company: '', role: '', duration: '' });
     const [currentJob, setCurrentJob] = useState(currentUser.profile?.currentJob || { company: '', role: '' });
     const [previousJob, setPreviousJob] = useState(currentUser.profile?.previousJob || { company: '', role: '' });
 
-    // --- Security States ---
+    
     const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
     const [privacySettings, setPrivacySettings] = useState({
         profileVisibility: currentUser.privacy?.profileVisibility || 'Everyone',
         connectionRequests: currentUser.privacy?.connectionRequests || 'Everyone',
     });
 
-    // --- Handlers ---
+    
     const handleAddEducation = () => setEducation([...education, { institution: '', degree: '', field: '' }]);
     const handleRemoveEducation = (index) => setEducation(education.filter((_, i) => i !== index));
     const handleEducationChange = (index, field, value) => {
@@ -42,16 +42,16 @@ const SettingsPage = () => {
     const handlePasswordChange = (e) => setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
     const handlePrivacyChange = (e) => setPrivacySettings({ ...privacySettings, [e.target.name]: e.target.value });
     
-    //  NEW: Handler for Internship and Job fields to keep code clean
+    
     const handleExperienceChange = (setter, field, value) => {
         setter(prevState => ({ ...prevState, [field]: value }));
     };
 
-    // --- API Call Handlers ---
+
     const handleSaveChanges = async () => {
         try {
             const token = localStorage.getItem('token');
-            //  NEW: Updated payload to include all career data
+            
             const payload = {
                 firstName: profileData.firstName,
                 lastName: profileData.lastName,
@@ -178,7 +178,7 @@ const SettingsPage = () => {
                             
                             <h3 className="text-xl font-semibold my-4 pt-4 border-t flex items-center gap-2"><Briefcase size={24}/> Career</h3>
                             
-                            {/* Internship Form */}
+                            
                             <div className="font-semibold mb-2">Internship</div>
                             <div className="bg-gray-50 p-4 rounded-md border space-y-2">
                                 <input type="text" placeholder="Company Name" value={internship.company} onChange={(e) => handleExperienceChange(setInternship, 'company', e.target.value)} className="w-full p-2 border rounded-md" />
@@ -186,14 +186,14 @@ const SettingsPage = () => {
                                 <input type="text" placeholder="Duration (e.g., 6 Months)" value={internship.duration} onChange={(e) => handleExperienceChange(setInternship, 'duration', e.target.value)} className="w-full p-2 border rounded-md" />
                             </div>
 
-                            {/* Current Job Form */}
+                            
                             <div className="font-semibold mt-4 mb-2">Current Job</div>
                             <div className="bg-gray-50 p-4 rounded-md border space-y-2">
                                 <input type="text" placeholder="Company Name" value={currentJob.company} onChange={(e) => handleExperienceChange(setCurrentJob, 'company', e.target.value)} className="w-full p-2 border rounded-md" />
                                 <input type="text" placeholder="Your Role (e.g., Software Engineer)" value={currentJob.role} onChange={(e) => handleExperienceChange(setCurrentJob, 'role', e.target.value)} className="w-full p-2 border rounded-md" />
                             </div>
 
-                            {/* Previous Job Form */}
+                            
                             <div className="font-semibold mt-4 mb-2">Previous Job</div>
                              <div className="bg-gray-50 p-4 rounded-md border space-y-2">
                                 <input type="text" placeholder="Company Name" value={previousJob.company} onChange={(e) => handleExperienceChange(setPreviousJob, 'company', e.target.value)} className="w-full p-2 border rounded-md" />

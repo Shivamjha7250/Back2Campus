@@ -11,7 +11,7 @@ import protect from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-//  Auth Routes
+
 router.post('/register', register);             
 router.post('/login', login);                   
 router.post('/verify-otp', verifyOtp);          
@@ -19,7 +19,6 @@ router.post('/resend-otp', resendOtp);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword); 
 
-//  Get current user (protected)
 router.get('/me', protect, (req, res) => {
   res.status(200).json(req.user);
 });

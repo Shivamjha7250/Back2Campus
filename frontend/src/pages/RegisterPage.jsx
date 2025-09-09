@@ -62,7 +62,7 @@ const Register = () => {
         {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* User Type Toggle */}
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">User Type</label>
             <div className="flex border border-gray-300 rounded-md p-1">
@@ -83,7 +83,7 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Input Fields */}
+          
           <input
             name="firstName"
             type="text"
