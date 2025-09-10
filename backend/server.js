@@ -34,7 +34,7 @@ const localIPUrl = `http://${localIP}:5173`;
 let allowedOrigins = process.env.FRONTEND_URLS
   ? process.env.FRONTEND_URLS.split(',').map((url) => url.trim())
   : [];
-allowedOrigins.push('http://localhost:5173', 'http://127.0.0.1:5173', localIPUrl);
+allowedOrigins.push('http://localhost:5173', 'http://127.0.0.1:5173','https://back2campus1.onrender.com', localIPUrl);
 allowedOrigins = [...new Set(allowedOrigins)];
 
 console.log(' Allowed Origins:', allowedOrigins);
