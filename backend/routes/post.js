@@ -16,14 +16,14 @@ import {
     getPostLikers,
     getPublicPostById 
 } from '../controllers/postController.js';
-import { uploadPostFiles } from '../config/multer.js'; 
+import upload from '../config/cloudinary.js'; 
 import auth from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 
 router.get('/', auth, getAllPosts);
-router.post('/create', auth, uploadPostFiles.array('files'), createPost);
+router.post('/create', auth, upload.array('files'), createPost);
 
 router.get('/user/:userId', auth, getMyPosts);
 router.get('/public/:id', getPublicPostById); 

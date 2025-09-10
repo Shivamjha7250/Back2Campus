@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getSocketId } from '../socket.js';
+import { v2 as cloudinary } from 'cloudinary';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,24 +23,35 @@ export const createPost = async (req, res) => {
     const { content, location } = req.body;
     const files = req.files || [];
     try {
-        const formattedFiles = files.map(file => {
-    let fileType = 'document';
-    if (file.mimetype.startsWith('image/')) fileType = 'image';
-    else if (file.mimetype.startsWith('video/')) fileType = 'video';
-    
-    return { url: `/uploads/posts/${file.filename}`, fileType: fileType };
-});
-        const newPost = new Post({ user: req.user.id, content, files: formattedFiles, location });
+            const formattedFiles = files.map(file => {
+            let fileType = 'document';
+            if (file.mimetype.startsWith('image/')) fileType = 'image';
+            else if (file.mimetype.startsWith('video/')) fileType = 'video';
+            
+            return { 
+                url: file.path, 
+                fileType: fileType,
+                public_id: file.filename 
+            };
+        });
+
+        const newPost = new Post({ 
+            user: req.user.id, 
+            content, 
+            files: formattedFiles, 
+            location 
+        });
+
         const savedPost = await newPost.save();
         const populatedPost = await getPopulatedPost(savedPost._id);
         req.io.emit('new_post', populatedPost);
         res.status(201).json(populatedPost);
+
     } catch (error) {
         console.error("Create Post Error:", error);
         res.status(500).json({ message: 'Server error while creating post.', error: error.message });
     }
 };
-
 
 export const getAllPosts = async (req, res) => {
     try {
@@ -128,19 +140,21 @@ export const deletePost = async (req, res) => {
         if (post.user.toString() !== req.user.id) return res.status(401).json({ message: 'User not authorized.' });
 
         if (post.files && post.files.length > 0) {
-            post.files.forEach(file => {
-                const filePath = path.join(__dirname, '..', file.url);
-                if (fs.existsSync(filePath)) {
-                    fs.unlink(filePath, (err) => {
-                        if (err) console.error(`Failed to delete file: ${filePath}`, err);
-                    });
+            const deletePromises = post.files.map(file => {
+                if (file.public_id) {
+                    return cloudinary.uploader.destroy(file.public_id);
                 }
+                return Promise.resolve();
             });
+            await Promise.all(deletePromises);
         }
+
         await post.deleteOne();
         req.io.emit('delete_post', { postId: req.params.id });
         res.status(200).json({ message: 'Post deleted successfully.' });
+
     } catch (error) {
+        console.error("Delete Post Error:", error);
         res.status(500).json({ message: 'Server error while deleting post.' });
     }
 };

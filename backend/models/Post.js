@@ -21,8 +21,10 @@ const postSchema = new mongoose.Schema(
         user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
         content: { type: String, trim: true },
         files: [{
-            url: { type: String, required: true },
-            fileType: { type: String, enum: ['image', 'video', 'document'], required: true },
+    url: { type: String, required: true },
+    fileType: { type: String, enum: ['image', 'video', 'document'], required: true },
+    public_id: { type: String, required: true } 
+
         }],
         location: { type: String, trim: true },
         
