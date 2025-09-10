@@ -14,7 +14,7 @@ import FindUsersPage from './pages/FindUsers';
 import RequestedPage from './pages/Requested';
 import NotificationPage from './pages/Notification';
 import MyConnectionPage from './pages/MyConnection';
-import ChatPage from './pages/Chat';
+import ChatPage from './pages/chat';
 import ContributePage from './pages/Contribute';
 import SettingsPage from './pages/Settings';
 import UserProfilePage from './pages/UserProfilePage';
