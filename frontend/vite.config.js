@@ -10,7 +10,7 @@ export default defineConfig({
         allowedHosts: ['back2campus1.onrender.com'],
         proxy: {
             '/api': {
-                target: 'http://localhost:5000',
+                target: 'https://back2campus.onrender.com',
                 changeOrigin: true,
                 secure: false,
             }
