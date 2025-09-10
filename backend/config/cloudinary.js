@@ -11,7 +11,6 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: (req, file) => {
-    
     let folderName = 'uploads/others';
     if (file.fieldname === 'avatar') {
       folderName = 'uploads/avatars';
@@ -22,11 +21,11 @@ const storage = new CloudinaryStorage({
     }
     return {
       folder: folderName,
-      allowed_formats: ['jpeg', 'png', 'jpg', 'pdf', 'doc', 'docx', 'mp4', 'mkv'] 
+      
     };
   }
 });
 
 const upload = multer({ storage: storage });
 
-export default upload; 
+export default upload;
