@@ -19,7 +19,10 @@ const OtpVerificationPage = () => {
   const redirect = location.state?.redirect || '/home';
 
   useEffect(() => {
-    if (!userId || !email) navigate('/login');
+    if (!userId || !email) {
+      navigate('/login');
+      return;
+    }
 
     const interval = setInterval(() => {
       setTimer((prev) => {
@@ -56,12 +59,13 @@ const OtpVerificationPage = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
 
-        
         if (data.user?._id) {
           socket.emit('join', data.user._id);
         }
 
-        navigate('/home');
+        setTimeout(() => {
+          navigate('/home');
+        }, 100);
       } else {
         navigate('/login');
       }
