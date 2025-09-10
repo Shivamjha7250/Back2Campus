@@ -9,14 +9,14 @@ import {
   updatePrivacySettings
 } from '../controllers/userController.js';
 import auth from '../middlewares/authMiddleware.js';
-import { uploadAvatar } from '../config/multer.js';
+import upload from '../config/cloudinary.js'; 
 
 const router = express.Router();
 
 router.get('/', auth, getAllUsers);
 router.get('/:id', auth, getUserById);
 
-router.post('/profile-picture', auth, uploadAvatar.single('avatar'), updateProfilePhoto);
+router.post('/profile-picture', auth, upload.single('avatar'), updateProfilePhoto);
 router.delete('/profile-picture', auth, removeProfilePhoto);
 
 router.put('/profile', auth, updateUserProfile);
