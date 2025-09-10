@@ -64,15 +64,6 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-
-app.use('/uploads', express.static(join(process.cwd(), 'uploads'), {
-  setHeaders: (res, path, stat) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Cross-Origin-Resource-Policy', 'cross-origin'); 
-  }
-}));
-
-
 app.use((req, res, next) => {
   req.io = io;
   next();
