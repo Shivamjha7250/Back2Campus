@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import API_BASE_URL from '../pages/apiConfig';
 import { socket } from '../socket';
@@ -11,12 +11,10 @@ const LeftSidebar = ({ user, closeSidebar }) => {
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  
   const [newChat, setNewChat] = useState(localStorage.getItem('newChat') === 'true');
   const [newNotification, setNewNotification] = useState(localStorage.getItem('newNotification') === 'true');
   const [newRequest, setNewRequest] = useState(localStorage.getItem('newRequest') === 'true');
 
-  
   useEffect(() => {
     if (!socket.connected) {
       socket.connect();
@@ -39,13 +37,11 @@ const LeftSidebar = ({ user, closeSidebar }) => {
       setNewRequest(true);
       localStorage.setItem('newRequest', 'true');
     };
-
     
     socket.on('new_chat', handleNewChat);
     socket.on('new_notification', handleNewNotification);
     socket.on('new_request', handleNewRequest);
 
-    
     return () => {
       socket.off('new_chat', handleNewChat);
       socket.off('new_notification', handleNewNotification);
@@ -53,7 +49,6 @@ const LeftSidebar = ({ user, closeSidebar }) => {
     };
   }, []);
 
-  
   useEffect(() => {
     const syncNotificationFlags = (event) => {
       if (!event) return;
@@ -66,7 +61,6 @@ const LeftSidebar = ({ user, closeSidebar }) => {
     return () => window.removeEventListener('storage', syncNotificationFlags);
   }, []);
 
-  
   const handleNavClick = (itemName) => {
     if (itemName === 'Chat') {
       setNewChat(false);
@@ -157,9 +151,10 @@ const LeftSidebar = ({ user, closeSidebar }) => {
         <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50">
           <div className="flex items-center gap-3">
             <img
+              
               src={
                 user.profile?.avatar
-                  ? `${API_BASE_URL}${user.profile.avatar}`
+                  ? user.profile.avatar
                   : 'https://placehold.co/40x40/EFEFEF/AAAAAA&text=A'
               }
               alt="Avatar"

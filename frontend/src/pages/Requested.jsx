@@ -10,7 +10,8 @@ const RequestCard = ({ request, onAction }) => {
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
             <Link to={`/profile/${request.sender._id}`} className="flex items-center gap-3 group">
                 <img 
-                    src={request.sender.profile?.avatar ? `${API_BASE_URL}${request.sender.profile.avatar}` : 'https://placehold.co/48x48/EFEFEF/AAAAAA&text=A'} 
+                    
+                    src={request.sender.profile?.avatar ? request.sender.profile.avatar : 'https://placehold.co/48x48/EFEFEF/AAAAAA&text=A'} 
                     alt={request.sender.firstName}
                     className="w-12 h-12 rounded-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />

@@ -9,18 +9,14 @@ const ConnectionCard = ({ connection, onRemove }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const navigate = useNavigate();
 
-    
     const handleChatClick = async () => {
         try {
             const token = localStorage.getItem('token');
-            
             const { data: conversation } = await axios.post(
                 `${API_BASE_URL}/api/chat/initiate`,
                 { receiverId: connection._id },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            
-            
             navigate(`/chat`, { state: { conversation } });
         } catch (error) {
             console.error("Failed to initiate chat:", error);
@@ -32,7 +28,8 @@ const ConnectionCard = ({ connection, onRemove }) => {
         <div className="bg-white p-4 rounded-lg shadow-sm border text-center relative">
             <Link to={`/profile/${connection._id}`}>
                 <img 
-                    src={connection.profile?.avatar ? `${API_BASE_URL}${connection.profile.avatar}` : 'https://placehold.co/80x80/EFEFEF/AAAAAA&text=A'} 
+                
+                    src={connection.profile?.avatar ? connection.profile.avatar : 'https://placehold.co/80x80/EFEFEF/AAAAAA&text=A'} 
                     alt={connection.firstName} 
                     className="w-20 h-20 rounded-full object-cover mb-3 mx-auto transition-transform duration-300 hover:scale-105"
                 />

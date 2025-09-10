@@ -7,15 +7,12 @@ import { socket } from '../socket';
 
 
 const getNotificationLink = (notification) => {
-    
     if (notification.post && (notification.type === 'like' || notification.type === 'comment')) {
         return `/post/${notification.post._id}`;
     }
-    
     if (notification.type === 'request_accepted') {
         return `/profile/${notification.sender._id}`;
     }
-    
     return '#';
 };
 
@@ -52,7 +49,6 @@ const NotificationPage = () => {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    
     useEffect(() => {
         const fetchNotifications = async () => {
             try {
@@ -70,11 +66,8 @@ const NotificationPage = () => {
         fetchNotifications();
     }, []);
     
-    
     useEffect(() => {
-        
         const handleNewNotification = (newNotification) => {
-            
             setNotifications(prev => [newNotification, ...prev]);
         };
 
@@ -93,7 +86,6 @@ const NotificationPage = () => {
             {notifications.length > 0 ? (
                 <div className="space-y-2">
                     {notifications.map(notif => (
-                        
                         <Link key={notif._id} to={getNotificationLink(notif)} className="block">
                             <div className={`flex items-start gap-4 p-3 rounded-lg transition-colors ${!notif.read ? 'bg-blue-50' : ''} hover:bg-gray-100`}>
                                 <div className="flex-shrink-0 mt-1">{getNotificationIcon(notif.type)}</div>
@@ -102,7 +94,8 @@ const NotificationPage = () => {
                                     <p className="text-xs text-gray-500 mt-1">{new Date(notif.createdAt).toLocaleString()}</p>
                                 </div>
                                 <img 
-                                    src={notif.sender.profile?.avatar ? `${API_BASE_URL}${notif.sender.profile.avatar}` : 'https://placehold.co/40x40/EFEFEF/AAAAAA&text=A'} 
+                                
+                                    src={notif.sender.profile?.avatar ? notif.sender.profile.avatar : 'https://placehold.co/40x40/EFEFEF/AAAAAA&text=A'} 
                                     alt={notif.sender.firstName}
                                     className="w-10 h-10 rounded-full object-cover"
                                 />

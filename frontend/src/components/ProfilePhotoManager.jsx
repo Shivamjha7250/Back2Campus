@@ -7,11 +7,11 @@ const ProfilePhotoManager = ({ user, onPhotoUpdate = () => {} }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const fileInputRef = useRef(null);
 
-  
-  const avatarUrl = user.profile?.avatar
-    ? `${API_BASE_URL}${user.profile.avatar}`
-    : 'https://placehold.co/128x128';
 
+  const avatarUrl = user.profile?.avatar
+    ? user.profile.avatar 
+    : 'https://placehold.co/128x128';
+  
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -32,11 +32,9 @@ const ProfilePhotoManager = ({ user, onPhotoUpdate = () => {} }) => {
       setMenuOpen(false);
     } catch (error) {
       console.error('Failed to upload photo:', error);
-      
     }
   };
 
-  
   const handleRemovePhoto = async () => {
   
     if (window.confirm('Are you sure you want to remove your profile picture?')) {
@@ -49,7 +47,6 @@ const ProfilePhotoManager = ({ user, onPhotoUpdate = () => {} }) => {
         setMenuOpen(false);
       } catch (error) {
         console.error('Failed to remove photo:', error);
-      
       }
     }
   };
@@ -62,7 +59,6 @@ const ProfilePhotoManager = ({ user, onPhotoUpdate = () => {} }) => {
         className="w-full h-full rounded-full object-cover border-4 border-white shadow-md"
       />
 
-    
       <button
         onClick={() => setMenuOpen(!menuOpen)}
         className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -70,7 +66,6 @@ const ProfilePhotoManager = ({ user, onPhotoUpdate = () => {} }) => {
         <Camera size={20} />
       </button>
 
-    
       <input
         type="file"
         ref={fileInputRef}

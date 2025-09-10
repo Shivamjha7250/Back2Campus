@@ -12,12 +12,10 @@ const CreatePostModal = ({ user, onClose, onPostSuccess }) => {
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef(null);
 
-
     const handleFileChange = (event) => {
         const selectedFiles = Array.from(event.target.files);
         setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
 
-        
         const newPreviews = selectedFiles.map(file => {
             if (file.type.startsWith('image/')) {
                 return { url: URL.createObjectURL(file), type: 'image' };
@@ -30,7 +28,6 @@ const CreatePostModal = ({ user, onClose, onPostSuccess }) => {
         setFilePreviews(prev => [...prev, ...newPreviews]);
     };
 
-    
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!content && files.length === 0) {
@@ -42,10 +39,14 @@ const CreatePostModal = ({ user, onClose, onPostSuccess }) => {
 
         const formData = new FormData();
         formData.append('content', content);
-        formData.append('location[interview]', location.interview);
-        formData.append('location[office]', location.office);
+        
+       
+        const locationString = [location.interview, location.office].filter(Boolean).join(', ');
+        formData.append('location', locationString);
+
         files.forEach(file => {
-            formData.append('files', file);
+            
+            formData.append('files', file); 
         });
 
         try {
@@ -77,62 +78,35 @@ const CreatePostModal = ({ user, onClose, onPostSuccess }) => {
                     </button>
                 </div>
 
-                
                 <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto p-4">
                     <div className="flex items-start gap-4">
-                        <img src={user.avatar || 'https://placehold.co/40x40/EFEFEF/AAAAAA&text=A'} alt="user" className="w-10 h-10 rounded-full" />
+                        
+                        <img src={user.profile?.avatar || 'https://placehold.co/40x40/EFEFEF/AAAAAA&text=A'} alt="user" className="w-10 h-10 rounded-full" />
                         <textarea
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            placeholder={`What's on your mind, ${user.name}?`}
+                            placeholder={`What's on your mind, ${user.firstName}?`}
                             className="w-full text-lg border-none focus:ring-0 resize-none"
                             rows="4"
                         />
                     </div>
-
-        
-                    {filePreviews.length > 0 && (
-                        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
-                            {filePreviews.map((preview, index) => (
-                                <div key={index} className="relative">
-                                    {preview.type === 'image' && <img src={preview.url} alt="preview" className="w-full h-32 object-cover rounded-lg" />}
-                                    {preview.type === 'video' && <video src={preview.url} controls className="w-full h-32 object-cover rounded-lg" />}
-                                    {preview.type === 'document' && (
-                                        <div className="w-full h-32 flex flex-col items-center justify-center bg-gray-100 rounded-lg p-2">
-                                            <FileText size={40} className="text-gray-500" />
-                                            <span className="text-xs text-center break-all">{preview.name}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
                     
-                    <div className="mt-4 border-t pt-4">
-                        <div className="flex items-center gap-2 text-gray-600 mb-2">
-                            <MapPin size={20} />
-                            <span className="font-semibold">Add Location</span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input
-                                type="text"
-                                placeholder="Interview Location"
-                                value={location.interview}
-                                onChange={(e) => setLocation({ ...location, interview: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Office Location"
-                                value={location.office}
-                                onChange={(e) => setLocation({ ...location, office: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                    </div>
-
-                
+                     {filePreviews.length > 0 && (
+                       <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+                             {filePreviews.map((preview, index) => (
+                             <div key={index} className="relative">
+                         {preview.type === 'image' && <img src={preview.url} alt="preview" className="w-full h-32 object-cover rounded-lg" />}
+                             {preview.type === 'video' && <video src={preview.url} controls className="w-full h-32 object-cover rounded-lg" />}
+                                 {preview.type === 'document' && (
+                                 <div className="w-full h-32 flex flex-col items-center justify-center bg-gray-100 rounded-lg p-2">
+                                 <FileText size={40} className="text-gray-500" />
+                                 <span className="text-xs text-center break-all">{preview.name}</span>
+                             </div>
+                                 )}
+                                 </div>
+                                         ))}
+                                         </div>
+                                                 )}
                     <input
                         type="file"
                         multiple
@@ -143,7 +117,6 @@ const CreatePostModal = ({ user, onClose, onPostSuccess }) => {
                     />
                 </form>
 
-            
                 <div className="p-4 border-t">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-4">

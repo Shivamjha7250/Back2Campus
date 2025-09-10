@@ -13,6 +13,7 @@ const ChatHeader = ({ otherUser, isOnline, onBack, onClearChat }) => (
       <button onClick={onBack} className="sm:hidden mr-4 text-gray-600 hover:text-black">
         <ArrowLeft size={20} />
       </button>
+      
       <img src={otherUser.profilePic} alt={`${otherUser.name} avatar`} className="w-10 h-10 rounded-full object-cover mr-3" />
       <div>
         <div className="font-semibold">{otherUser.name}</div>
@@ -37,7 +38,8 @@ const Message = React.memo(({ msg, isOwnMessage, onReply, onDelete, onEdit }) =>
   };
 
   const renderMessageContent = () => {
-    const fileUrl = `${API_BASE_URL}${msg.fileUrl}`;
+    
+    const fileUrl = msg.fileUrl; 
     switch (msg.messageType) {
       case 'text':
         return <p className="break-words">{msg.text}</p>;
@@ -109,7 +111,8 @@ const ChatView = ({ currentUser, selectedChat, onlineUsers, onBack }) => {
     return {
       _id: partner._id,
       name: `${partner.firstName || ''} ${partner.lastName || ''}`.trim(),
-      profilePic: partner.profile?.avatar ? `${API_BASE_URL}${partner.profile.avatar}` : 'https://placehold.co/48x48/EFEFEF/AAAAAA&text=A'
+      
+      profilePic: partner.profile?.avatar ? partner.profile.avatar : 'https://placehold.co/48x48/EFEFEF/AAAAAA&text=A'
     };
   }, [selectedChat, currentUser]);
 
@@ -221,7 +224,7 @@ const ChatView = ({ currentUser, selectedChat, onlineUsers, onBack }) => {
     if (!file || !selectedChat) return;
     setUploading(true);
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('chatFile', file); 
     formData.append('conversationId', selectedChat._id);
     try {
         const token = localStorage.getItem('token');

@@ -6,6 +6,11 @@ const ProfileCard = ({ user, onProfileUpdate }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const fileInputRef = useRef(null);
 
+    
+    const avatarUrl = user.profile?.avatar 
+        ? user.profile.avatar 
+        : 'https://placehold.co/112x112'; 
+
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -40,10 +45,10 @@ const ProfileCard = ({ user, onProfileUpdate }) => {
         <div className="bg-white p-6 rounded-xl shadow-sm sticky top-4 text-center">
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*"/>
             
-        
             <div className="relative inline-block mb-4">
                 <img 
-                    src={`${API_BASE_URL}${user.profile.avatar}`} 
+                    
+                    src={avatarUrl} 
                     className="h-28 w-28 rounded-full object-cover border-4 border-gray-200"
                 />
                 <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-2 rounded-full border-2 border-white hover:bg-blue-700">
@@ -52,7 +57,8 @@ const ProfileCard = ({ user, onProfileUpdate }) => {
             
                 {isMenuOpen && (
                     <div className="absolute top-full right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-10 text-left">
-                        <a href={`${API_BASE_URL}${user.profile.avatar}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        
+                        <a href={avatarUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                             <Eye size={16}/> View Photo
                         </a>
                         <button onClick={() => fileInputRef.current.click()} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">

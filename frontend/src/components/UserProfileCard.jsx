@@ -7,9 +7,11 @@ const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) =>
         return null;
     }
 
+    
     const avatarUrl = user.profile?.avatar 
-        ? `${API_BASE_URL}${user.profile.avatar}` 
+        ? user.profile.avatar 
         : 'https://placehold.co/96x96/EFEFEF/AAAAAA&text=No-Photo';
+    
 
     return (
         <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-md">

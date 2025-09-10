@@ -62,7 +62,8 @@ const CreatePostPage = () => {
             <h2 className="text-xl font-bold p-4 border-b">Create Post</h2>
             <form onSubmit={handleSubmit} className="p-4">
                 <div className="flex items-start gap-4">
-                    <img src={user.profile?.avatar ? `${API_BASE_URL}${user.profile.avatar}` : 'https://placehold.co/40x40/EFEFEF/AAAAAA&text=A'} alt="user" className="w-10 h-10 rounded-full" />
+                    
+                    <img src={user.profile?.avatar ? user.profile.avatar : 'https://placehold.co/40x40/EFEFEF/AAAAAA&text=A'} alt="user" className="w-10 h-10 rounded-full" />
                     <textarea
                         value={content}
                         onChange={(e) => setContent(e.target.value)}

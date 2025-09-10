@@ -39,7 +39,8 @@ const UserCard = ({ user, currentUser, onConnectionUpdate }) => {
         <div className="bg-white p-4 rounded-lg shadow-sm border flex flex-col items-center text-center">
             <Link to={`/profile/${user._id}`}>
                 <img 
-                    src={user.profile?.avatar ? `${API_BASE_URL}${user.profile.avatar}` : 'https://placehold.co/80x80/EFEFEF/AAAAAA&text=A'} 
+                    
+                    src={user.profile?.avatar ? user.profile.avatar : 'https://placehold.co/80x80/EFEFEF/AAAAAA&text=A'} 
                     alt={user.firstName} 
                     className="w-20 h-20 rounded-full object-cover mb-3 transition-transform duration-300 hover:scale-105"
                 />

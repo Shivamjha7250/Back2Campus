@@ -21,7 +21,8 @@ const LikersModal = ({ users, onClose }) => {
                             {users.map(user => (
                                 <Link to={`/profile/${user._id}`} key={user._id} className="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-lg" onClick={onClose}>
                                     <img 
-                                        src={user.profile?.avatar ? `${API_BASE_URL}${user.profile.avatar}` : 'https://placehold.co/40x40'} 
+                                        
+                                        src={user.profile?.avatar ? user.profile.avatar : 'https://placehold.co/40x40'} 
                                         alt={user.firstName}
                                         className="w-10 h-10 rounded-full object-cover"
                                     />

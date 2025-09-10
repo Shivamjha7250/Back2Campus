@@ -2,16 +2,30 @@ import React, { useMemo } from 'react';
 import API_BASE_URL from '../pages/apiConfig';
 import { FileText, Image as ImageIcon, Video } from 'lucide-react';
 
-const formatTime = (isoString) => { /* ... */ };
-const getMessagePreview = (lastMessage) => { /* ... */ };
+
+const formatTime = (isoString) => { 
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+};
+
+const getMessagePreview = (lastMessage) => {
+    if (!lastMessage) return "No messages yet.";
+    if (lastMessage.messageType === 'text') return lastMessage.text;
+    if (lastMessage.messageType === 'image') return <div className="flex items-center gap-1"><ImageIcon size={16} /> Photo</div>;
+    if (lastMessage.messageType === 'video') return <div className="flex items-center gap-1"><Video size={16} /> Video</div>;
+    return <div className="flex items-center gap-1"><FileText size={16} /> File</div>;
+};
+
 
 const ChatListItem = React.memo(({ conv, currentUser, isSelected, isOnline, onSelect, unreadCount }) => {
     const partner = useMemo(() => conv.members?.find(m => m?._id !== currentUser?._id), [conv.members, currentUser]);
 
     if (!partner) return null;
 
+
     const profilePic = partner.profile?.avatar
-        ? `${API_BASE_URL}${partner.profile.avatar}`
+        ? partner.profile.avatar
         : 'https://placehold.co/48x48/EFEFEF/AAAAAA&text=A';
         
     const lastMessagePreview = getMessagePreview(conv.lastMessage);
@@ -57,7 +71,7 @@ const ChatList = ({ currentUser, conversations, selectedChat, onSelectChat, onli
     return (
         <div className="flex flex-col h-full bg-white">
             <div className="p-4 border-b">
-                 <h2 className="font-bold text-xl">Chats</h2>
+                <h2 className="font-bold text-xl">Chats</h2>
             </div>
             <div className="overflow-y-auto">
                 {conversations.map(conv => {

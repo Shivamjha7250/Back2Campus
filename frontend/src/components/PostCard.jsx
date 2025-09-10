@@ -38,7 +38,8 @@ const Comment = ({ comment, currentUser, postOwnerId, onReplySubmit, onDeleteCom
     <div className="p-2 border rounded bg-gray-50 relative">
       <Link to={`/profile/${comment.user?._id}`} className="flex items-center gap-2 mb-1">
         <img
-          src={comment.user?.profile?.avatar ? `${API_BASE_URL}${comment.user.profile.avatar}` : 'https://placehold.co/32x32'}
+        
+          src={comment.user?.profile?.avatar ? comment.user.profile.avatar : 'https://placehold.co/32x32'}
           alt={`${comment.user?.firstName} ${comment.user?.lastName}`}
           className="w-8 h-8 rounded-full object-cover cursor-pointer"
         />
@@ -82,7 +83,8 @@ const Comment = ({ comment, currentUser, postOwnerId, onReplySubmit, onDeleteCom
               <div key={reply._id} className="text-sm bg-gray-100 p-2 rounded flex items-center gap-2 relative">
                 <Link to={`/profile/${reply.user?._id}`} className="flex items-center gap-2">
                   <img
-                    src={reply.user?.profile?.avatar ? `${API_BASE_URL}${reply.user.profile.avatar}` : 'https://placehold.co/24x24'}
+                    
+                    src={reply.user?.profile?.avatar ? reply.user.profile.avatar : 'https://placehold.co/24x24'}
                     alt={`${reply.user?.firstName} ${reply.user?.lastName}`}
                     className="w-6 h-6 rounded-full object-cover cursor-pointer"
                   />
@@ -120,7 +122,6 @@ const PostCard = ({ post, currentUser, onUpdatePost, onPostDelete, isReadOnly = 
 
   const isOwner = currentUser?._id === post.user?._id;
 
-  
   const isLiked = currentUser && post.likes
     ? post.likes.some(like => like.user?._id === currentUser._id)
     : false;
@@ -260,7 +261,8 @@ const PostCard = ({ post, currentUser, onUpdatePost, onPostDelete, isReadOnly = 
         <div className="flex items-center gap-3">
           <Link to={`/profile/${post.user?._id}`}>
             <img
-              src={post.user?.profile?.avatar ? `${API_BASE_URL}${post.user.profile.avatar}` : 'https://placehold.co/48x48'}
+              
+              src={post.user?.profile?.avatar ? post.user.profile.avatar : 'https://placehold.co/48x48'}
               alt="avatar"
               className="w-12 h-12 rounded-full object-cover"
             />
@@ -323,7 +325,8 @@ const PostCard = ({ post, currentUser, onUpdatePost, onPostDelete, isReadOnly = 
           <div className="grid grid-cols-2 gap-2 mt-2">
             {post.files.map(file => (
               <div key={file._id}>
-                {file.fileType === 'image' ? <img src={`${API_BASE_URL}${file.url}`} alt="post" className="w-full rounded" /> : <video src={`${API_BASE_URL}${file.url}`} controls className="w-full rounded" />}
+                
+                {file.fileType === 'image' ? <img src={file.url} alt="post" className="w-full rounded" /> : <video src={file.url} controls className="w-full rounded" />}
               </div>
             ))}
           </div>
@@ -380,7 +383,8 @@ const PostCard = ({ post, currentUser, onUpdatePost, onPostDelete, isReadOnly = 
           {currentUser && (
             <form onSubmit={handleCommentSubmit} className="flex items-center gap-2 mb-3">
               <img
-                src={currentUser.profile?.avatar ? `${API_BASE_URL}${currentUser.profile.avatar}` : 'https://placehold.co/32x32'}
+                // --- Fix #5 ---
+                src={currentUser.profile?.avatar ? currentUser.profile.avatar : 'https://placehold.co/32x32'}
                 alt="you"
                 className="w-8 h-8 rounded-full"
               />
