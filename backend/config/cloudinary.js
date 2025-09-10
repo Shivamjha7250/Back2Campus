@@ -12,16 +12,19 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: (req, file) => {
     let folderName = 'uploads/others';
+
     if (file.fieldname === 'avatar') {
       folderName = 'uploads/avatars';
-    } else if (file.fieldname === 'files') { 
+    } else if (file.fieldname === 'files') {
       folderName = 'uploads/posts';
     } else if (file.fieldname === 'chatFile') {
       folderName = 'uploads/chat';
     }
+
     return {
       folder: folderName,
-      
+    
+      resource_type: 'auto'
     };
   }
 });
