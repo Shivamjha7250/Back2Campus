@@ -1,6 +1,6 @@
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const multer = require('multer');
+import { v2 as cloudinary } from 'cloudinary'; 
+import { CloudinaryStorage } from 'multer-storage-cloudinary'; 
+import multer from 'multer'; 
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -15,18 +15,18 @@ const storage = new CloudinaryStorage({
     let folderName = 'uploads/others';
     if (file.fieldname === 'avatar') {
       folderName = 'uploads/avatars';
-    } else if (file.fieldname === 'postImage') { 
+    } else if (file.fieldname === 'files') { 
       folderName = 'uploads/posts';
     } else if (file.fieldname === 'chatFile') {
       folderName = 'uploads/chat';
     }
     return {
       folder: folderName,
-      allowed_formats: ['jpeg', 'png', 'jpg', 'pdf', 'doc'] 
+      allowed_formats: ['jpeg', 'png', 'jpg', 'pdf', 'doc', 'docx', 'mp4', 'mkv'] 
     };
   }
 });
 
 const upload = multer({ storage: storage });
 
-module.exports = upload;
+export default upload; 
