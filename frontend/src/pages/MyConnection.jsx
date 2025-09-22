@@ -28,8 +28,7 @@ const ConnectionCard = ({ connection, onRemove }) => {
         <div className="bg-white p-4 rounded-lg shadow-sm border text-center relative">
             <Link to={`/profile/${connection._id}`}>
                 <img 
-                
-                    src={connection.profile?.avatar ? connection.profile.avatar : 'https://placehold.co/80x80/EFEFEF/AAAAAA&text=A'} 
+                    src={connection.profile?.avatar?.url || 'https://placehold.co/80x80'} 
                     alt={connection.firstName} 
                     className="w-20 h-20 rounded-full object-cover mb-3 mx-auto transition-transform duration-300 hover:scale-105"
                 />
@@ -114,7 +113,6 @@ const MyConnectionPage = () => {
             };
         }
     }, [currentUser]);
-
 
     const handleRemoveConnection = async (connectionId) => {
         if (window.confirm("Are you sure you want to remove this connection?")) {
