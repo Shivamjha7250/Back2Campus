@@ -1,6 +1,5 @@
 import React from 'react';
 import { UserPlus } from 'lucide-react';
-import API_BASE_URL from '../pages/apiConfig';
 
 const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) => {
     if (!user) {
@@ -8,15 +7,13 @@ const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) =>
     }
 
     
-    const avatarUrl = user.profile?.avatar 
-        ? user.profile.avatar 
-        : 'https://placehold.co/96x96/EFEFEF/AAAAAA&text=No-Photo';
-    
+    const avatarUrl = user.profile?.avatar?.url || 'https://placehold.co/96x96/EFEFEF/AAAAAA&text=No-Photo';
 
     return (
         <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-md">
             <div className="flex justify-center mb-4">
                 <img
+                    
                     src={avatarUrl}
                     alt={`${user.firstName}'s profile`}
                     className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
@@ -27,7 +24,6 @@ const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) =>
                 <h3 className="text-2xl font-bold mb-1">{user.firstName} {user.lastName}</h3>
                 <p className="text-md text-gray-500 capitalize mb-4">{user.userType}</p>
 
-            
                 {!isOwnProfile && connectionStatus && (
                     <button
                         onClick={onConnect}
@@ -45,7 +41,6 @@ const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) =>
             </div>
             
             <div className="text-left pt-4 border-t border-gray-200 space-y-3">
-            
                 <div className="text-sm">
                     <strong>Educational History:</strong>
                     {user.profile?.education && user.profile.education.length > 0 && user.profile.education[0].institution ? (
@@ -61,7 +56,6 @@ const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) =>
                     )}
                 </div>
 
-            
                 <div className="text-sm">
                     <strong>Internship:</strong>
                     {user.profile?.internship?.company ? (
@@ -74,7 +68,6 @@ const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) =>
                     )}
                 </div>
 
-            
                 <div className="text-sm">
                     <strong>Current Job:</strong>
                     {user.profile?.currentJob?.company ? (
@@ -85,7 +78,6 @@ const UserProfileCard = ({ user, connectionStatus, onConnect, isOwnProfile }) =>
                         <p className="italic text-gray-500">Not specified</p>
                     )}
                 </div>
-
                 
                 <div className="text-sm">
                     <strong>Previous Job:</strong>

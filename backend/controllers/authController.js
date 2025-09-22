@@ -12,7 +12,6 @@ const generateOtp = () => crypto.randomInt(100000, 999999).toString();
 const formatUserType = (type) =>
   type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
 
-
 export const register = async (req, res) => {
   const { firstName, lastName, email, password, userType } = req.body;
 
@@ -60,12 +59,12 @@ export const verifyOtp = async (req, res) => {
       message: 'OTP verified successfully',
       token,
       user: {
-        _id: user._id, 
+        _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         userType: user.userType,
-        profile: user.profile, 
+        profile: user.profile,
       },
     });
   } catch (error) {
@@ -119,6 +118,30 @@ export const login = async (req, res) => {
   }
 };
 
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const userObject = user.toObject();
+
+    userObject.profile = userObject.profile || {};
+    userObject.profile.avatar = userObject.profile.avatar || { url: '', public_id: '' };
+    
+    if (!userObject.profile.avatar.url) {
+        userObject.profile.avatar.url = '';
+    }
+
+    res.status(200).json(userObject);
+    
+  } catch (error) {
+    console.error('Error in getMe controller:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
 
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -137,7 +160,6 @@ export const forgotPassword = async (req, res) => {
     res.status(500).json({ message: 'Error during forgot password' });
   }
 };
-
 
 export const resetPassword = async (req, res) => {
   const { userId, newPassword } = req.body;

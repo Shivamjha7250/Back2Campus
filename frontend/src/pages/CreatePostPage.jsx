@@ -10,10 +10,12 @@ const CreatePostPage = () => {
     const navigate = useNavigate();
     const [content, setContent] = useState('');
     const [files, setFiles] = useState([]);
-    const [location, setLocation] = useState(''); 
+    const [location, setLocation] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef(null);
+    const localAvatar = localStorage.getItem('profileAvatar');
+    const avatarUrl = localAvatar || user?.profile?.avatar?.url || 'https://placehold.co/40x40';
 
     const handleFileChange = (event) => {
         const selectedFiles = Array.from(event.target.files);
@@ -35,7 +37,7 @@ const CreatePostPage = () => {
 
         const formData = new FormData();
         formData.append('content', content);
-        formData.append('location', location); 
+        formData.append('location', location);
         files.forEach(file => formData.append('files', file));
 
         try {
@@ -62,8 +64,8 @@ const CreatePostPage = () => {
             <h2 className="text-xl font-bold p-4 border-b">Create Post</h2>
             <form onSubmit={handleSubmit} className="p-4">
                 <div className="flex items-start gap-4">
+                    <img src={avatarUrl} alt="user" className="w-10 h-10 rounded-full" />
                     
-                    <img src={user.profile?.avatar ? user.profile.avatar : 'https://placehold.co/40x40/EFEFEF/AAAAAA&text=A'} alt="user" className="w-10 h-10 rounded-full" />
                     <textarea
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
@@ -72,8 +74,7 @@ const CreatePostPage = () => {
                         rows="4"
                     />
                 </div>
-
-            
+                
                 {files.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
                         {files.map((file, index) => {
@@ -101,8 +102,7 @@ const CreatePostPage = () => {
                         })}
                     </div>
                 )}
-
-            
+                
                 <div className="mt-4 border-t pt-4">
                     <div className="flex items-center gap-2 text-gray-600 mb-2">
                         <MapPin size={20} />

@@ -43,14 +43,18 @@ const userSchema = new mongoose.Schema({
   connections: [ { type: mongoose.Schema.Types.ObjectId, ref: 'User' } ],
 
   profile: {
-    avatar: { type: String, default: '' },
+    
+    avatar: {
+      url: { type: String, default: '' },
+      public_id: { type: String, default: '' }
+    },
+    
     bio: { type: String, default: '' },
     education: [educationSchema],
     internship: experienceSchema,
     currentJob: experienceSchema,
     previousJob: experienceSchema,
   },
-
 
   privacy: {
     profileVisibility: {

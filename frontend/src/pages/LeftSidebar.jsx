@@ -153,8 +153,8 @@ const LeftSidebar = ({ user, closeSidebar }) => {
             <img
               
               src={
-                user.profile?.avatar
-                  ? user.profile.avatar
+                user.profile?.avatar?.url 
+                  ? user.profile.avatar.url
                   : 'https://placehold.co/40x40/EFEFEF/AAAAAA&text=A'
               }
               alt="Avatar"
