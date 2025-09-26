@@ -24,10 +24,9 @@ const ChatListItem = React.memo(({ conv, currentUser, isSelected, isOnline, onSe
     if (!partner) return null;
 
 
-    const profilePic = partner.profile?.avatar
-        ? partner.profile.avatar
+   const profilePic = partner.profile?.avatar?.url
+        ? partner.profile.avatar.url 
         : 'https://placehold.co/48x48/EFEFEF/AAAAAA&text=A';
-        
     const lastMessagePreview = getMessagePreview(conv.lastMessage);
     const lastMessageTime = conv.lastMessageTimestamp ? formatTime(conv.lastMessageTimestamp) : '';
 

@@ -112,7 +112,7 @@ const ChatView = ({ currentUser, selectedChat, onlineUsers, onBack }) => {
       _id: partner._id,
       name: `${partner.firstName || ''} ${partner.lastName || ''}`.trim(),
       
-      profilePic: partner.profile?.avatar ? partner.profile.avatar : 'https://placehold.co/48x48/EFEFEF/AAAAAA&text=A'
+      profilePic: partner.profile?.avatar?.url ? partner.profile.avatar.url : 'https://placehold.co/48x48/EFEFEF/AAAAAA&text=A'
     };
   }, [selectedChat, currentUser]);
 
